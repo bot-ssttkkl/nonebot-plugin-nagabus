@@ -14,8 +14,8 @@ class OrderReportList(BaseModel):
 
 
 class AnalyzeTenhou(BaseModel):
-    status: int
-    msg: str
+    status: int = 200
+    msg: str = ""
 
 
 class NagaApi:

@@ -26,7 +26,7 @@ class NagaOrderOrm(SqlModel):
     model_type: Mapped[int]
     status: Mapped[NagaOrderStatus]
     naga_report: Mapped[Optional[str]]  # json of NagaReport
-    create_time: Mapped[datetime] = mapped_column(UTCDateTime)
+    create_time: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     update_time: Mapped[datetime] = mapped_column(UTCDateTime)
 
 
@@ -36,7 +36,7 @@ class MajsoulOrderOrm(SqlModel):
 
     naga_haihu_id: Mapped[str] = mapped_column(ForeignKey("nonebot_plugin_nagabus_order.haihu_id", ondelete="cascade"),
                                                primary_key=True)
-    paipu_uuid: Mapped[str]
+    paipu_uuid: Mapped[str] = mapped_column(index=True)
     kyoku: Mapped[int]
     honba: Mapped[int]
     model_type: Mapped[int]
