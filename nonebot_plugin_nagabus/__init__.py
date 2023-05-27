@@ -18,7 +18,8 @@ from . import matchers
 
 help_text = f"""
 牌谱分析：
-{default_cmd_start}naga <雀魂牌谱链接> <东/南x局x本场>
+{default_cmd_start}naga <雀魂牌谱链接> <东/南x局x本场>：消耗10NP解析雀魂小局
+{default_cmd_start}naga <天凤牌谱链接>：消耗50NP解析天凤半庄
 
 使用情况：
 {default_cmd_start}naga本月使用情况

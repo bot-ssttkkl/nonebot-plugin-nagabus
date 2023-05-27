@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlparse, parse_qs
 
 from nonebot import on_command, logger
 from nonebot.adapters.onebot.v11 import MessageEvent
@@ -79,6 +80,26 @@ async def naga_analyze(event: MessageEvent, cmd_args=CommandArg()):
             await MessageFactory(Text(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）")).send(reply=True)
         except UnsupportedGameError as e:
             await MessageFactory(Text("只支持四麻牌谱")).send(reply=True)
+    elif "tenhou" in args[0]:
+        tenhou_url = args[0].strip()
+
+        _, _, _, _, tenhou_query, _ = urlparse(tenhou_url)
+        tenhou_query = parse_qs(tenhou_query)
+
+        haihu_id = tenhou_query["log"][0]
+        seat = 0
+        if "tw" in tenhou_query and len(tenhou_query["tw"]) > 0:
+            seat = int(tenhou_query["tw"][0])
+
+        report, cost_np = await naga.analyze_tenhou(haihu_id, seat, event.user_id)
+        msg = f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw=0\n"
+
+        if cost_np == 0:
+            msg += "由于此前已解析过该局，本次解析消耗0NP"
+        else:
+            msg += f"本次解析消耗{cost_np}NP"
+        await MessageFactory(Text(msg)).send(reply=True)
     else:
         await MessageFactory(Text("用法：\n"
-                                  f"{default_cmd_start}naga <雀魂牌谱链接> <东/南x局x本场>")).send(reply=True)
+                                  f"{default_cmd_start}naga <雀魂牌谱链接> <东/南x局x本场>：消耗10NP解析雀魂小局\n"
+                                  f"{default_cmd_start}naga <天凤牌谱链接>：消耗50NP解析天凤半庄")).send(reply=True)

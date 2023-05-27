@@ -1,6 +1,5 @@
 import json
 from typing import Dict, List, Union
-from urllib.parse import urlparse, parse_qs
 
 from httpx import AsyncClient
 from nonebot import logger
@@ -12,6 +11,11 @@ from .model import NagaReport, NagaOrder, NagaHanchanModelType, NagaTonpuuModelT
 class OrderReportList(BaseModel):
     report: List[NagaReport]
     order: List[NagaOrder]
+
+
+class AnalyzeTenhou(BaseModel):
+    status: int
+    msg: str
 
 
 class NagaApi:
@@ -52,16 +56,11 @@ class NagaApi:
         )
         return OrderReportList.parse_obj(resp.json())
 
-    async def analyze_tenhou(self, tenhou_url: str,
-                             model_type: Union[
-                                 NagaHanchanModelType, NagaTonpuuModelType] = NagaHanchanModelType.nishiki):
-        # needs test
-        _, _, _, _, tenhou_query, _ = urlparse(tenhou_url)
-        tenhou_query = parse_qs(tenhou_query)
-
+    async def analyze_tenhou(self, haihu_id: str, seat: int,
+                             model_type: NagaHanchanModelType = NagaHanchanModelType.nishiki) -> AnalyzeTenhou:
         data = {
-            "haihu_id": tenhou_query["log"][0],
-            "seat": tenhou_query["tw"][0],
+            "haihu_id": haihu_id,
+            "seat": seat,
             "reanalysis": 0,
             "player_type": model_type.value,
             "csrfmiddlewaretoken": self.client.cookies["csrftoken"]
@@ -74,7 +73,11 @@ class NagaApi:
             },
             data=data
         )
-        return resp
+
+        if len(resp.content) > 0:
+            return AnalyzeTenhou.parse_obj(resp.json())
+        else:
+            return AnalyzeTenhou(status=200, msg="")
 
     async def analyze_custom(self, data: Union[list, str], seat: int = 0,
                              rule: NagaGameRule = NagaGameRule.hanchan,

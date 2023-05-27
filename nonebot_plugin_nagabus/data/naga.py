@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import IntEnum
 from typing import Optional
 
 from sqlalchemy import ForeignKey
@@ -9,6 +10,11 @@ from .utils import UTCDateTime
 from ..naga.model import NagaOrderStatus
 
 
+class NagaOrderSource(IntEnum):
+    tenhou = 0
+    majsoul = 1
+
+
 class NagaOrderOrm(SqlModel):
     __tablename__ = 'nonebot_plugin_nagabus_order'
     __table_args__ = {"extend_existing": True}
@@ -16,6 +22,7 @@ class NagaOrderOrm(SqlModel):
     haihu_id: Mapped[str] = mapped_column(primary_key=True)
     customer_id: Mapped[int]
     cost_np: Mapped[int]
+    source: Mapped[NagaOrderSource]
     model_type: Mapped[int]
     status: Mapped[NagaOrderStatus]
     naga_report: Mapped[Optional[str]]  # json of NagaReport

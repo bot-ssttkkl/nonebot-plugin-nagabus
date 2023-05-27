@@ -42,7 +42,10 @@ class NagaReport(NamedTuple):
 
 class NagaOrderStatus(IntEnum):
     ok = 0
-    analyzing = 1
+    pending = 1
+    analyzing = 2
+    failed = 3
+    failed2 = 4
 
 
 class NagaOrder(NamedTuple):

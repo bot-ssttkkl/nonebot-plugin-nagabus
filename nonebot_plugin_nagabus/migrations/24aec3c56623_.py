@@ -1,17 +1,18 @@
 """empty message
 
-Revision ID: 91da298b5f0c
+Revision ID: 24aec3c56623
 Revises: 
-Create Date: 2023-05-26 21:07:58.216575
+Create Date: 2023-05-27 10:48:15.741390
 
 """
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
+
 
 # revision identifiers, used by Alembic.
 import nonebot_plugin_nagabus
 
-revision = '91da298b5f0c'
+revision = '24aec3c56623'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,8 +29,9 @@ def upgrade() -> None:
     sa.Column('haihu_id', sa.String(), nullable=False),
     sa.Column('customer_id', sa.Integer(), nullable=False),
     sa.Column('cost_np', sa.Integer(), nullable=False),
+    sa.Column('source', sa.Enum('tenhou', 'majsoul', name='nagaordersource'), nullable=False),
     sa.Column('model_type', sa.Integer(), nullable=False),
-    sa.Column('status', sa.Enum('ok', 'analyzing', name='nagaorderstatus'), nullable=False),
+    sa.Column('status', sa.Enum('ok', 'pending', 'analyzing', 'failed', 'failed2', name='nagaorderstatus'), nullable=False),
     sa.Column('naga_report', sa.String(), nullable=True),
     sa.Column('create_time', nonebot_plugin_nagabus.data.utils.utc_datetime.UTCDateTime(), nullable=False),
     sa.Column('update_time', nonebot_plugin_nagabus.data.utils.utc_datetime.UTCDateTime(), nullable=False),
