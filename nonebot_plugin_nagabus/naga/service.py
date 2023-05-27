@@ -166,7 +166,7 @@ class NagaService:
         haihu_id = ""
         new_order = False
 
-        async def _get_local_order() -> Optional[MajsoulOrderOrm]:
+        async def _get_local_order() -> Optional[NagaOrderOrm]:
             stmt = select(MajsoulOrderOrm).where(MajsoulOrderOrm.paipu_uuid == majsoul_uuid,
                                                  MajsoulOrderOrm.kyoku == kyoku,
                                                  MajsoulOrderOrm.honba == honba,
@@ -176,7 +176,7 @@ class NagaService:
             if order_orm is not None:
                 if order_orm.order.status == NagaOrderStatus.ok or \
                         datetime.now(tz=timezone.utc).timestamp() - order_orm.order.update_time.timestamp() < 90:
-                    return order_orm
+                    return order_orm.order
                 else:  # 超过90s仍未分析完成则删除重来
                     logger.opt(colors=True).info(f"Delete majsoul paipu <y>{majsoul_uuid} "
                                                  f"(kyoku: {kyoku}, honba: {honba}, "

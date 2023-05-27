@@ -43,4 +43,5 @@ class MajsoulOrderOrm(SqlModel):
 
     order: Mapped[NagaOrderOrm] = relationship(foreign_keys="MajsoulOrderOrm.naga_haihu_id",
                                                cascade="save-update, delete",
-                                               passive_deletes=True)
+                                               passive_deletes=True,
+                                               lazy="joined")

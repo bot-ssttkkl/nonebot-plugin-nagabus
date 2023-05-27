@@ -10,7 +10,7 @@ from nonebot import require
 
 from .utils.nonebot import default_cmd_start
 
-require("nonebot_plugin_saa")
+require("nonebot_plugin_access_control")
 require("nonebot_plugin_majsoul")
 require("nonebot_plugin_datastore")
 

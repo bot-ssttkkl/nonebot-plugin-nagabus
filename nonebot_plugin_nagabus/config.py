@@ -8,8 +8,6 @@ from pydantic import BaseSettings, root_validator
 class Config(BaseSettings):
     naga_cookies: Dict[str, str]
     naga_fake_api: bool = False
-    naga_allow_group: Union[bool, List[int]] = True
-    naga_allow_private: Union[bool, List[int]] = True
 
     datastore_database_dialect: str
 

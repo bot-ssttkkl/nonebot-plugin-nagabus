@@ -16,7 +16,7 @@ nonebot-plugin-datastore = "^0.6.3"
 typing-extensions = "^4.6.2"
 pydantic = "^1.10.8"
 monthdelta = "^0.9.1"
-nonebot-plugin-send-anything-anywhere = "^0.2.4"
+nonebot-plugin-access-control = "^0.4.2"
 
 [tool.nonebot]
 plugins = ["nonebot_plugin_nagabus"]

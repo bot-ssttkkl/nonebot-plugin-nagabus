@@ -3,15 +3,17 @@ from io import StringIO
 
 from monthdelta import monthdelta
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import MessageEvent, Bot, GroupMessageEvent
-from nonebot_plugin_saa import MessageFactory, Text
+from nonebot.adapters.onebot.v11 import MessageEvent, Bot, GroupMessageEvent, Message, MessageSegment
+from nonebot.internal.matcher import Matcher
 
-from .rule import naga_rule
+from ..ac import ac
 from ..naga import naga
 from ..utils.tz import TZ_TOKYO
 
+statistic_srv = ac.create_subservice("statistic")
 
-async def naga_statistic(bot: Bot, event: MessageEvent, year: int, month: int):
+
+async def naga_statistic(bot: Bot, event: MessageEvent, matcher: Matcher, year: int, month: int):
     statistic = await naga.statistic(year, month)
 
     nicknames = {}
@@ -35,22 +37,28 @@ async def naga_statistic(bot: Bot, event: MessageEvent, year: int, month: int):
             sio.write(f"#{i + 1} {nickname}: {s.cost_np}NP\n")
 
         msg = (f"{year}年{month}月共使用{total_cost_np}NP\n\n" + sio.getvalue()).strip()
-        await MessageFactory(Text(msg)).send(reply=True)
+
+        await matcher.send(Message([
+            MessageSegment.reply(event.message_id),
+            MessageSegment.text(msg)
+        ]))
 
 
-naga_statistic_this_month_matcher = on_command("naga本月使用情况", priority=5, block=True, rule=naga_rule)
+naga_statistic_this_month_matcher = on_command("naga本月使用情况", priority=5, block=True)
+statistic_srv.patch_matcher(naga_statistic_this_month_matcher)
 
 
 @naga_statistic_this_month_matcher.handle()
-async def naga_statistic_this_month(bot: Bot, event: MessageEvent):
+async def naga_statistic_this_month(bot: Bot, event: MessageEvent, matcher: Matcher):
     cur = datetime.now(tz=TZ_TOKYO)
-    await naga_statistic(bot, event, cur.year, cur.month)
+    await naga_statistic(bot, event, matcher, cur.year, cur.month)
 
 
-naga_statistic_prev_month_matcher = on_command("naga上月使用情况", priority=5, block=True, rule=naga_rule)
+naga_statistic_prev_month_matcher = on_command("naga上月使用情况", priority=5, block=True)
+statistic_srv.patch_matcher(naga_statistic_prev_month_matcher)
 
 
 @naga_statistic_prev_month_matcher.handle()
-async def naga_statistic_prev_month(bot: Bot, event: MessageEvent):
+async def naga_statistic_prev_month(bot: Bot, event: MessageEvent, matcher: Matcher):
     prev_month = datetime.now(tz=TZ_TOKYO) - monthdelta(months=1)
-    await naga_statistic(bot, event, prev_month.year, prev_month.month)
+    await naga_statistic(bot, event, matcher, prev_month.year, prev_month.month)

@@ -20,12 +20,24 @@ majsoul_username=xxxxxx@xxx.com
 majsoul_password=xxxxxx
 ```
 
-还可以配置允许上车的群组、私聊：
+#### 权限控制
+
+配合[nonebot-plugin-access-control](https://github.com/ssttkkl/nonebot-plugin-access-control)，可以配置允许上车的群组和用户，或者是限制时间段内使用次数：
+
+譬如，超级用户可以通过分别发送以下指令，从而只允许群聊114514使用。
 
 ```
-naga_allow_private=[114514]
-naga_allow_group=[1919810]
+/ac permission deny --srv nonebot_plugin_nagabus --sbj all
+/ac permission allow --srv nonebot_plugin_nagabus --sbj qq:g114514
 ```
+
+譬如，超级用户可以通过分别发送以下指令，从而限制每天只允许使用10次解析功能。（解析失败、重复解析不计算在内）
+
+```
+/ac limit add --srv nonebot_plugin_nagabus.analyze --sbj all --span 1d --limit 10
+```
+
+具体可以参考nonebot-plugin-access-control的文档进行权限控制。
 
 ### 对于用户
 
