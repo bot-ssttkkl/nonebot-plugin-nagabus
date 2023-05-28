@@ -4,7 +4,6 @@ from asyncio import Lock
 from datetime import datetime, timezone
 from inspect import isawaitable
 from typing import Dict, Union, Optional, List, Tuple
-from urllib.parse import urlparse, parse_qs
 
 from monthdelta import monthdelta
 from nonebot import logger
@@ -60,15 +59,19 @@ class ObservableOrderReport:
             self._refresh_worker = asyncio.create_task(self._refresh())
 
 
-class OrderError(BaseException):
+class NagaError(BaseException):
     ...
 
 
-class UnsupportedGameError(BaseException):
+class OrderError(NagaError):
     ...
 
 
-class InvalidKyokuHonbaError(BaseException):
+class UnsupportedGameError(NagaError):
+    ...
+
+
+class InvalidKyokuHonbaError(NagaError):
     def __init__(self, available_kyoku_honba: List[Tuple[int, int]]):
         super().__init__()
         self.available_kyoku_honba = available_kyoku_honba

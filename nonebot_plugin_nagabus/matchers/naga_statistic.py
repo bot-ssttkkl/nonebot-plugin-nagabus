@@ -6,6 +6,7 @@ from nonebot import on_command
 from nonebot.adapters.onebot.v11 import MessageEvent, Bot, GroupMessageEvent, Message, MessageSegment
 from nonebot.internal.matcher import Matcher
 
+from .errors import handle_error
 from ..ac import ac
 from ..naga import naga
 from ..utils.tz import TZ_TOKYO
@@ -49,6 +50,7 @@ statistic_srv.patch_matcher(naga_statistic_this_month_matcher)
 
 
 @naga_statistic_this_month_matcher.handle()
+@handle_error(naga_statistic_this_month_matcher)
 async def naga_statistic_this_month(bot: Bot, event: MessageEvent, matcher: Matcher):
     cur = datetime.now(tz=TZ_TOKYO)
     await naga_statistic(bot, event, matcher, cur.year, cur.month)
@@ -59,6 +61,7 @@ statistic_srv.patch_matcher(naga_statistic_prev_month_matcher)
 
 
 @naga_statistic_prev_month_matcher.handle()
+@handle_error(naga_statistic_this_month_matcher)
 async def naga_statistic_prev_month(bot: Bot, event: MessageEvent, matcher: Matcher):
     prev_month = datetime.now(tz=TZ_TOKYO) - monthdelta(months=1)
     await naga_statistic(bot, event, matcher, prev_month.year, prev_month.month)

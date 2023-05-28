@@ -5,11 +5,13 @@ from nonebot import on_command, logger, Bot
 from nonebot.adapters.onebot.v11 import MessageEvent, Message, MessageSegment
 from nonebot.internal.matcher import Matcher
 from nonebot.params import CommandArg
+from nonebot_plugin_access_control.errors import RateLimitedError
 from tensoul.downloader import MajsoulDownloadError
 
+from .errors import BadRequestError, handle_error
 from ..ac import ac
 from ..naga import naga
-from ..naga.service import InvalidKyokuHonbaError, UnsupportedGameError, OrderError
+from ..naga.service import InvalidKyokuHonbaError, UnsupportedGameError
 from ..utils.integer import decode_integer
 from ..utils.nonebot import default_cmd_start
 
@@ -23,10 +25,7 @@ kyoku_honba_reg = re.compile(r"([东南])([一二三四1234])局([0123456789零�
 async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid: str, kyoku: int, honba: int):
     token = await analyze_srv.acquire_token_for_rate_limit(bot, event)
     if token is None:
-        await matcher.finish(Message([
-            MessageSegment.reply(event.message_id),
-            MessageSegment.text("已达到使用次数上限")
-        ]))
+        raise RateLimitedError()
 
     try:
         report, cost_np = await naga.analyze_majsoul(uuid, kyoku, honba, event.user_id)
@@ -46,10 +45,7 @@ async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid:
         await token.retire()
         logger.opt(colors=True).warning(f"Failed to download paipu <y>{uuid}</y>, code: {e.code}")
         if e.code == 1203:
-            await matcher.finish(Message([
-                MessageSegment.reply(event.message_id),
-                MessageSegment.text("牌谱不存在")
-            ]))
+            raise BadRequestError("牌谱不存在") from e
         else:
             raise e
     except InvalidKyokuHonbaError as e:
@@ -61,31 +57,15 @@ async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid:
             else:
                 kyoku_honba.append(f"南{kyoku - 3}局{honba}本场")
 
-        await matcher.finish(Message([
-            MessageSegment.reply(event.message_id),
-            MessageSegment.text(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）")
-        ]))
+        raise BadRequestError(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）") from e
     except UnsupportedGameError as e:
-        await token.retire()
-        await matcher.finish(Message([
-            MessageSegment.reply(event.message_id),
-            MessageSegment.text("只支持四麻牌谱")
-        ]))
-    except OrderError as e:
-        await token.retire()
-        await matcher.finish(Message([
-            MessageSegment.reply(event.message_id),
-            MessageSegment.text("解析时发生错误")
-        ]))
+        raise BadRequestError("只支持四麻牌谱") from e
 
 
 async def analyze_tenhou(bot: Bot, event: MessageEvent, matcher: Matcher, haihu_id: str, seat: int):
     token = await analyze_srv.acquire_token_for_rate_limit(bot, event)
     if token is None:
-        await matcher.finish(Message([
-            MessageSegment.reply(event.message_id),
-            MessageSegment.text("已达到使用次数上限")
-        ]))
+        raise RateLimitedError()
 
     report, cost_np = await naga.analyze_tenhou(haihu_id, seat, event.user_id)
     msg = f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw=0\n"
@@ -106,6 +86,7 @@ naga_analyze_matcher = on_command("naga", priority=10)
 
 
 @naga_analyze_matcher.handle()
+@handle_error(naga_analyze_matcher)
 async def naga_analyze(bot: Bot, event: MessageEvent, matcher: Matcher, cmd_args=CommandArg()):
     if not await analyze_srv.check(bot, event, acquire_rate_limit_token=False):
         await matcher.finish()
@@ -114,28 +95,19 @@ async def naga_analyze(bot: Bot, event: MessageEvent, matcher: Matcher, cmd_args
     if "maj-soul" in args[0]:
         mat = uuid_reg.search(args[0])
         if not mat:
-            await matcher.finish(Message([
-                MessageSegment.reply(event.message_id),
-                MessageSegment.text("不正确的雀魂牌谱")
-            ]))
+            raise BadRequestError("不正确的雀魂牌谱")
 
         uuid = mat.group(0)
 
         if len(args) < 2:
-            await matcher.finish(Message([
-                MessageSegment.reply(event.message_id),
-                MessageSegment.text("请指定场次与本场")
-            ]))
+            raise BadRequestError("请指定场次与本场")
 
         kyoku = None
         honba = None
 
         mat = kyoku_honba_reg.search(args[1])
         if not mat:
-            await matcher.finish(Message([
-                MessageSegment.reply(event.message_id),
-                MessageSegment.text("请输入正确的场次与本场")
-            ]))
+            raise BadRequestError("请输入正确的场次与本场")
 
         raw_wind, raw_kyoku, raw_honba = mat.groups()
 
@@ -149,10 +121,7 @@ async def naga_analyze(bot: Bot, event: MessageEvent, matcher: Matcher, cmd_args
             pass
 
         if kyoku is None or honba is None:
-            await matcher.finish(Message([
-                MessageSegment.reply(event.message_id),
-                MessageSegment.text("请输入正确的场次与本场")
-            ]))
+            raise BadRequestError("请输入正确的场次与本场")
 
         await analyze_majsoul(bot, event, matcher, uuid, kyoku, honba)
     elif "tenhou" in args[0]:
