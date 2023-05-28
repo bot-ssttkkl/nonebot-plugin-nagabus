@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 from nonebot import get_driver
 from pydantic import BaseSettings, root_validator, ValidationError
 
+from .errors import ConfigError
+
 
 class Config(BaseSettings):
     naga_cookies: Dict[str, str]
@@ -35,6 +37,6 @@ try:
 except ValidationError as e:
     for err in e.errors():
         if err["loc"] == ("naga_cookies",) and err["type"] == "value_error.missing":
-            raise RuntimeError("Please configure naga_cookies in your .env file!") from e
+            raise ConfigError("Please configure naga_cookies in your .env file!") from e
     else:
         raise e
