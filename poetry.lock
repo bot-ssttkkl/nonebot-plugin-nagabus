@@ -162,24 +162,25 @@ tz = ["python-dateutil"]
 
 [[package]]
 name = "anyio"
-version = "3.6.2"
+version = "3.7.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
 category = "main"
 optional = false
-python-versions = ">=3.6.2"
+python-versions = ">=3.7"
 files = [
-    {file = "anyio-3.6.2-py3-none-any.whl", hash = "sha256:fbbe32bd270d2a2ef3ed1c5d45041250284e31fc0a4df4a5a6071842051a51e3"},
-    {file = "anyio-3.6.2.tar.gz", hash = "sha256:25ea0d673ae30af41a0c442f81cf3b38c7e79fdc7b60335a4c14e05eb0947421"},
+    {file = "anyio-3.7.0-py3-none-any.whl", hash = "sha256:eddca883c4175f14df8aedce21054bfca3adb70ffe76a9f607aef9d7fa2ea7f0"},
+    {file = "anyio-3.7.0.tar.gz", hash = "sha256:275d9973793619a5374e1c89a4f4ad3f4b0a5510a2b5b939444bee8f4c4d37ce"},
 ]
 
 [package.dependencies]
+exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
 idna = ">=2.8"
 sniffio = ">=1.1"
 
 [package.extras]
-doc = ["packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
-test = ["contextlib2", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (<0.15)", "uvloop (>=0.15)"]
-trio = ["trio (>=0.16,<0.22)"]
+doc = ["Sphinx (>=6.1.0)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme", "sphinxcontrib-jquery"]
+test = ["anyio[trio]", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
+trio = ["trio (<0.22)"]
 
 [[package]]
 name = "apscheduler"
@@ -244,14 +245,14 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 
 [[package]]
 name = "cachetools"
-version = "5.3.0"
+version = "5.3.1"
 description = "Extensible memoizing collections and decorators"
 category = "main"
 optional = false
-python-versions = "~=3.7"
+python-versions = ">=3.7"
 files = [
-    {file = "cachetools-5.3.0-py3-none-any.whl", hash = "sha256:429e1a1e845c008ea6c85aa35d4b98b65d6a9763eeef3e37e92728a12d1de9d4"},
-    {file = "cachetools-5.3.0.tar.gz", hash = "sha256:13dfddc7b8df938c21a940dfa6557ce6e94a2f1cdfa58eb90c805721d58f2c14"},
+    {file = "cachetools-5.3.1-py3-none-any.whl", hash = "sha256:95ef631eeaea14ba2e36f06437f36463aac3a096799e876ee55e5cdccb102590"},
+    {file = "cachetools-5.3.1.tar.gz", hash = "sha256:dce83f2d9b4e1f732a8cd44af8e8fab2dbe46201467fc98b3ef8f269092bf62b"},
 ]
 
 [[package]]
@@ -464,6 +465,21 @@ files = [
     {file = "cycler-0.11.0-py3-none-any.whl", hash = "sha256:3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3"},
     {file = "cycler-0.11.0.tar.gz", hash = "sha256:9c87405839a19696e837b3b818fed3f5f69f16f1eec1a1ad77e043dcea9c772f"},
 ]
+
+[[package]]
+name = "exceptiongroup"
+version = "1.1.1"
+description = "Backport of PEP 654 (exception groups)"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "exceptiongroup-1.1.1-py3-none-any.whl", hash = "sha256:232c37c63e4f682982c8b6459f33a8981039e5fb8756b2074364e5055c498c9e"},
+    {file = "exceptiongroup-1.1.1.tar.gz", hash = "sha256:d484c3090ba2889ae2928419117447a14daf3c1231d5e30d0aae34f354f01785"},
+]
+
+[package.extras]
+test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastapi"
@@ -1310,14 +1326,14 @@ nonebot2 = ">=2.0.0-beta.3,<3.0.0"
 
 [[package]]
 name = "nonebot-plugin-access-control"
-version = "0.4.1"
+version = "0.4.2"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_access_control-0.4.1-py3-none-any.whl", hash = "sha256:54bcc88c638547d86c09f0f4a2fb0631b958e211d3baa29c9a0108a9bd05909f"},
-    {file = "nonebot_plugin_access_control-0.4.1.tar.gz", hash = "sha256:c63678afe42d2dbf401f75ad0307241010cfc61faacc6f6eb5f91ca2385dd1e9"},
+    {file = "nonebot_plugin_access_control-0.4.2-py3-none-any.whl", hash = "sha256:6daa96da68a4ea04f5ce482e411aafc7f4633580e54a34dee335e6b17df24d43"},
+    {file = "nonebot_plugin_access_control-0.4.2.tar.gz", hash = "sha256:bc4c5d1931b472fdd68a371e64916d235aeb14eb8d33724ffae24893fd3ceb4a"},
 ]
 
 [package.dependencies]
@@ -1401,14 +1417,14 @@ typing-extensions = ">=4.0.0"
 
 [[package]]
 name = "nonebot-plugin-majsoul"
-version = "0.2.0.post1"
+version = "0.2.0.post2"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_majsoul-0.2.0.post1-py3-none-any.whl", hash = "sha256:c95031e7df1b50787c0c76a40fadb4da922e03fe2e750cc8fb1030601b4f7828"},
-    {file = "nonebot_plugin_majsoul-0.2.0.post1.tar.gz", hash = "sha256:999e3cf0d6284f75cb34cfb377ec3f29d1cc50635c1986079c05f012e4f20a8e"},
+    {file = "nonebot_plugin_majsoul-0.2.0.post2-py3-none-any.whl", hash = "sha256:8bd0d9dca7981ab19388d3a8619a845b3d34b950e6f33fa1b62fd611b0936434"},
+    {file = "nonebot_plugin_majsoul-0.2.0.post2.tar.gz", hash = "sha256:c92b72f8837b866bb9faa5bfeef189f906ab14cbf780e71e89ad3a691ca26a15"},
 ]
 
 [package.dependencies]
@@ -2382,4 +2398,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ba2c75744ee4a1737102e082d70870f7a5ce14fccc135ba4f0a7e0af500ef45b"
+content-hash = "802182a4606dc72b012534be07772362928160c577f2ef40168752322054196d"
