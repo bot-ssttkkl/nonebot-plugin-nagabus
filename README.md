@@ -49,3 +49,7 @@ majsoul_password=xxxxxx
     - `/naga上月使用情况`
 
 以上命令格式中，以<>包裹的表示一个参数。
+
+## Special Thanks
+
+- https://github.com/Diving-Fish/auto-naga
