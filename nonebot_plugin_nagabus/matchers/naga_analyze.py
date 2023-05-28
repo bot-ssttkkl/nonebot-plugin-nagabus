@@ -17,10 +17,6 @@ from ..utils.nonebot import default_cmd_start
 
 analyze_srv = ac.create_subservice("analyze")
 
-uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
-
-kyoku_honba_reg = re.compile(r"([东南])([一二三四1234])局([0123456789零一两二三四五六七八九十百千万亿]+)本场")
-
 
 async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid: str, kyoku: int, honba: int):
     token = await analyze_srv.acquire_token_for_rate_limit(bot, event)
@@ -54,8 +50,10 @@ async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid:
         for kyoku, honba in e.available_kyoku_honba:
             if kyoku <= 3:
                 kyoku_honba.append(f"东{kyoku}局{honba}本场")
-            else:
+            elif kyoku <= 7:
                 kyoku_honba.append(f"南{kyoku - 3}局{honba}本场")
+            else:
+                kyoku_honba.append(f"西{kyoku - 7}局{honba}本场")
 
         raise BadRequestError(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）") from e
     except UnsupportedGameError as e:
@@ -83,6 +81,10 @@ async def analyze_tenhou(bot: Bot, event: MessageEvent, matcher: Matcher, haihu_
 
 
 naga_analyze_matcher = on_command("naga", priority=10)
+
+uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
+
+kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局([0123456789零一两二三四五六七八九十百千万亿]+)本场")
 
 
 @naga_analyze_matcher.handle()
@@ -115,6 +117,8 @@ async def naga_analyze(bot: Bot, event: MessageEvent, matcher: Matcher, cmd_args
             kyoku = decode_integer(raw_kyoku) - 1
             if raw_wind == '南':
                 kyoku += 4
+            elif raw_wind == '西':
+                kyoku += 8
 
             honba = decode_integer(raw_honba)
         except ValueError:
