@@ -334,7 +334,7 @@ class NagaService:
 
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
                                              customer_id=customer_id,
-                                             cost_np=10,
+                                             cost_np=50,
                                              source=NagaOrderSource.tenhou,
                                              model_type=model_type.value,
                                              status=NagaOrderStatus.analyzing,
