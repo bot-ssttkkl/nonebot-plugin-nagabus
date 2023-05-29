@@ -24,11 +24,17 @@ class FakeNagaApi:
     async def order_report_list(self, year: int, month: int) -> OrderReportList:
         return OrderReportList(report=self.report, order=self.order)
 
+    async def _produce_order(self, order: NagaOrder):
+        await asyncio.sleep(1)
+
+        self.order.insert(0, order)
+        logger.debug(f"Insert order (haihu_id: {order.haihu_id})")
+
     async def _produce_report(self, report: NagaReport):
         await asyncio.sleep(20)
 
         self.report.insert(0, report)
-        logger.info(f"Insert report (haihu_id: {report.haihu_id}, report_id: {report.report_id})")
+        logger.debug(f"Insert report (haihu_id: {report.haihu_id}, report_id: {report.report_id})")
 
     async def analyze_custom(self, data: Union[dict, str], seat: int = 0,
                              rule: NagaGameRule = NagaGameRule.hanchan,
@@ -38,8 +44,7 @@ class FakeNagaApi:
         feat = ''.join(str(random.randint(1, 9)) for _ in range(16))
         haihu_id = f"custom_haihu_{time}_{feat}"
         order = NagaOrder(haihu_id=haihu_id, status=NagaOrderStatus.ok, model=NagaModel(2, 0, model_type), rule=rule)
-        self.order.insert(0, order)
-        logger.info(f"Insert order (haihu_id: {order.haihu_id})")
+        create_task(self._produce_order(order))
 
         report_id = str(uuid4())
         report = NagaReport(haihu_id=haihu_id, players=[NagaReportPlayer("AI", 0)] * 4, report_id=report_id, seat=0,
@@ -54,8 +59,7 @@ class FakeNagaApi:
 
         order = NagaOrder(haihu_id=haihu_id, status=NagaOrderStatus.ok, model=NagaModel(2, 0, model_type),
                           rule=NagaGameRule.hanchan)
-        self.order.insert(0, order)
-        logger.info(f"Insert order (haihu_id: {order.haihu_id})")
+        create_task(self._produce_order(order))
 
         report_id = str(uuid4())
         report = NagaReport(haihu_id=haihu_id, players=[NagaReportPlayer("AI", 0)] * 4, report_id=report_id, seat=seat,

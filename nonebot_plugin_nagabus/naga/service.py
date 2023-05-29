@@ -35,7 +35,7 @@ class ObservableOrderReport:
             self._observers = []
 
             if len(observers) != 0:
-                logger.info("refreshing naga orders and reports...")
+                logger.trace("refreshing naga orders and reports...")
 
                 current = datetime.now(tz=TZ_TOKYO)
                 prev_month = current - monthdelta(months=1)
@@ -85,9 +85,10 @@ class NagaService:
         else:
             self.api = NagaApi(cookies)
 
-        self._order_mutex = Lock()
         self._majsoul_order_mutex = Lock()
         self._tenhou_order_mutex = Lock()
+
+        self._last_custom_haihu_id = None
 
         self._order_report = ObservableOrderReport(self.api)
         self.timeout = timeout
@@ -128,21 +129,46 @@ class NagaService:
                             rule: NagaGameRule,
                             model_type: Union[NagaHanchanModelType,
                                               NagaTonpuuModelType]) -> NagaOrder:
-        async with self._order_mutex:
-            current = datetime.now(tz=TZ_TOKYO)
-            await self.api.analyze_custom(data, 0, rule, model_type)
+        current = datetime.now(tz=TZ_TOKYO)
+        await self.api.analyze_custom(data, 0, rule, model_type)
 
-            res = await self.api.order_report_list(current.year, current.month)
-            if len(res.order) == 0:
-                raise OrderError('order failed')
+        order_fut = asyncio.get_running_loop().create_future()
+        retry = 0  # 下单完马上获取order的话，有时候order刷新不出来，可以多试几次
 
-            order = res.order[0]
-            # order.haihu_id: custom_haihu_2023-05-25T23:46:07_QRIGFOKmA4HT4CJF
-            order_time = datetime.fromisoformat(order.haihu_id[13:32]).replace(tzinfo=TZ_TOKYO)
-            if abs(current.timestamp() - order_time.timestamp()) >= 30:  # 时间差超过了30s
-                raise OrderError('order failed')
+        def _make_callback():
+            async def callback(order_report: OrderReportList):
+                nonlocal retry
 
-            return order
+                try:
+                    for order in order_report.order:
+                        # order.haihu_id: custom_haihu_2023-05-25T23:46:07_QRIGFOKmA4HT4CJF
+                        if not order.haihu_id.startswith("custom_haihu_"):
+                            continue
+
+                        if order.haihu_id == self._last_custom_haihu_id:
+                            break
+
+                        order_time = datetime.fromisoformat(order.haihu_id[13:32]).replace(tzinfo=TZ_TOKYO)
+                        if abs(current.timestamp() - order_time.timestamp()) >= 30:  # 时间差超过了30s
+                            break
+
+                        self._last_custom_haihu_id = order.haihu_id
+                        order_fut.set_result(order)
+                        return
+
+                    if retry < 5:
+                        self._order_report.observe_once(_make_callback())
+                        retry += 1
+                    else:
+                        raise OrderError('order failed')
+                except BaseException as e:
+                    order_fut.set_exception(e)
+
+            return callback
+
+        self._order_report.observe_once(_make_callback())
+
+        return await order_fut
 
     async def analyze_majsoul(self, majsoul_uuid: str, kyoku: int, honba: int,
                               customer_id: int,
@@ -183,9 +209,10 @@ class NagaService:
                 else:  # 超过90s仍未分析完成则删除重来
                     logger.opt(colors=True).info(f"Delete majsoul paipu <y>{majsoul_uuid} "
                                                  f"(kyoku: {kyoku}, honba: {honba}, "
-                                                 f"model_type: {model_type.name})</y> analyze order "
+                                                 f"model_type: {model_type.name})</y> analyze order: {order_orm.naga_haihu_id}, "
                                                  f"because it takes over 90 seconds and still not done")
                     await sess.delete(order_orm.order)
+                    await sess.delete(order_orm)
                     await sess.commit()
                     return None
 
@@ -249,26 +276,30 @@ class NagaService:
                 logger.opt(colors=True).info(f"Found a existing majsoul paipu <y>{majsoul_uuid} "
                                              f"(kyoku: {kyoku}, honba: {honba}, "
                                              f"model_type: {model_type.name})</y> "
-                                             "analyze report")
+                                             f"analyze report: {local_order.haihu_id}")
                 report = NagaReport(*json.loads(local_order.naga_report))
                 return NagaServiceOrder(report, 0)
 
+            haihu_id = local_order.naga_haihu_id
             logger.opt(colors=True).info(f"Found a processing majsoul paipu <y>{majsoul_uuid} "
                                          f"(kyoku: {kyoku}, honba: {honba}, "
                                          f"model_type: {model_type.name})</y> "
-                                         "analyze order")
-            haihu_id = local_order.naga_haihu_id
+                                         f"analyze order: {haihu_id}")
 
         assert haihu_id != ""
 
+        logger.opt(colors=True).info(f"Waiting for majsoul paipu <y>{majsoul_uuid} "
+                                     f"(kyoku: {kyoku}, honba: {honba}, "
+                                     f"model_type: {model_type.name})</y> "
+                                     f"analyze report: {haihu_id} ...")
         report = await self._get_report(haihu_id)
 
         if new_order:
             # 需要更新之前创建的NagaOrderOrm
             logger.opt(colors=True).debug(f"Updating majsoul paipu <y>{majsoul_uuid} "
-                                          f"(kyoku: {kyoku}, honba: {honba},"
-                                          f" model_type: {model_type.name})</y> "
-                                          "analyze report...")
+                                          f"(kyoku: {kyoku}, honba: {honba}, "
+                                          f"model_type: {model_type.name})</y> "
+                                          f"analyze report: {haihu_id}...")
             stmt = update(NagaOrderOrm).where(NagaOrderOrm.haihu_id == haihu_id).values(
                 status=NagaOrderStatus.ok, naga_report=json.dumps(report), update_time=datetime.now(timezone.utc)
             )
@@ -279,19 +310,10 @@ class NagaService:
         else:
             return NagaServiceOrder(report, 0)
 
-    async def _order_tenhou(self, haihu_id: str, seat: int, model_type: NagaHanchanModelType) -> NagaOrder:
-        async with self._order_mutex:
-            current = datetime.now(tz=TZ_TOKYO)
-            res = await self.api.analyze_tenhou(haihu_id, seat, model_type)
-            if res.status != 200:
-                raise OrderError(res.msg)
-
-            res = await self.api.order_report_list(current.year, current.month)
-            for o in res.order:
-                if o.haihu_id == haihu_id:
-                    return o
-
-            raise OrderError("order failed")
+    async def _order_tenhou(self, haihu_id: str, seat: int, model_type: NagaHanchanModelType):
+        res = await self.api.analyze_tenhou(haihu_id, seat, model_type)
+        if res.status != 200:
+            raise OrderError(res.msg)
 
     # needs test
     async def analyze_tenhou(self, haihu_id: str, seat: int, customer_id: int,
@@ -328,7 +350,7 @@ class NagaService:
                     logger.opt(colors=True).info(f"Ordering tenhou paipu <y>{haihu_id} "
                                                  f"(model_type: {model_type.name})</y> analyze...")
 
-                    order = await self._order_tenhou(haihu_id, seat, model_type)
+                    await self._order_tenhou(haihu_id, seat, model_type)
 
                     new_order = True
 
@@ -357,6 +379,9 @@ class NagaService:
                                          f"(model_type: {model_type.name})</y> "
                                          "analyze order")
 
+        logger.opt(colors=True).info(f"Waiting for tenhou paipu <y>{haihu_id} "
+                                     f"(model_type: {model_type.name})</y> "
+                                     f"analyze report...")
         report = await self._get_report(haihu_id)
 
         if new_order:
@@ -381,7 +406,8 @@ class NagaService:
         t_end = datetime(year, month, 1) + monthdelta(months=1)
 
         stmt = select(NagaOrderOrm).where(NagaOrderOrm.create_time >= t_begin,
-                                          NagaOrderOrm.create_time < t_end)
+                                          NagaOrderOrm.create_time < t_end,
+                                          NagaOrderOrm.status == NagaOrderStatus.ok)
 
         orders = (await sess.execute(stmt)).scalars()
 
