@@ -49,7 +49,7 @@ async def analyze_majsoul(bot: Bot, event: MessageEvent, matcher: Matcher, uuid:
         kyoku_honba = []
         for kyoku, honba in e.available_kyoku_honba:
             if kyoku <= 3:
-                kyoku_honba.append(f"东{kyoku}局{honba}本场")
+                kyoku_honba.append(f"东{kyoku + 1}局{honba}本场")
             elif kyoku <= 7:
                 kyoku_honba.append(f"南{kyoku - 3}局{honba}本场")
             else:
@@ -101,33 +101,29 @@ async def naga_analyze(bot: Bot, event: MessageEvent, matcher: Matcher, cmd_args
 
         uuid = mat.group(0)
 
-        if len(args) < 2:
-            raise BadRequestError("请指定场次与本场")
-
         kyoku = None
         honba = None
 
-        mat = kyoku_honba_reg.search(args[1])
-        if not mat:
-            raise BadRequestError("请输入正确的场次与本场")
+        if len(args) >= 2:
+            mat = kyoku_honba_reg.search(args[1])
+            if mat:
+                raw_wind, raw_kyoku, raw_honba = mat.groups()
 
-        raw_wind, raw_kyoku, raw_honba = mat.groups()
+                try:
+                    kyoku = decode_integer(raw_kyoku) - 1
+                    if raw_wind == '南':
+                        kyoku += 4
+                    elif raw_wind == '西':
+                        kyoku += 8
 
-        try:
-            kyoku = decode_integer(raw_kyoku) - 1
-            if raw_wind == '南':
-                kyoku += 4
-            elif raw_wind == '西':
-                kyoku += 8
-
-            honba = decode_integer(raw_honba)
-        except ValueError:
-            pass
+                    honba = decode_integer(raw_honba)
+                except ValueError:
+                    pass
 
         if kyoku is None or honba is None:
-            raise BadRequestError("请输入正确的场次与本场")
-
-        await analyze_majsoul(bot, event, matcher, uuid, kyoku, honba)
+            await analyze_majsoul(bot, event, matcher, uuid, -1, -1)  # 让其发送该局的场次本场信息
+        else:
+            await analyze_majsoul(bot, event, matcher, uuid, kyoku, honba)
     elif "tenhou" in args[0]:
         tenhou_url = args[0].strip()
 
