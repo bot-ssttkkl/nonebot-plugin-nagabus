@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from asyncio import Lock
 from datetime import datetime, timezone
 from inspect import isawaitable
@@ -8,6 +9,7 @@ from typing import Dict, Union, Optional, List, Tuple
 from monthdelta import monthdelta
 from nonebot import logger
 from sqlalchemy import select, update
+from tensoul.downloader import MajsoulDownloadError
 
 from .api import NagaApi, OrderReportList
 from .fake_api import FakeNagaApi
@@ -67,6 +69,10 @@ class OrderError(NagaError):
     ...
 
 
+class InvalidGameError(NagaError):
+    ...
+
+
 class UnsupportedGameError(NagaError):
     ...
 
@@ -78,6 +84,8 @@ class InvalidKyokuHonbaError(NagaError):
 
 
 class NagaService:
+    _tenhou_haihu_id_reg = re.compile(r"^20\d{8}gm-[a-f\d]{4}-[a-z\d]{4,5}-[a-zA-Z\d]{8}$")
+
     def __init__(self, cookies: Dict[str, str], timeout: float = 90.0):
         if conf.naga_fake_api:
             self.api = FakeNagaApi()
@@ -176,10 +184,18 @@ class NagaService:
                               model_type: Union[NagaHanchanModelType,
                                                 NagaTonpuuModelType, None] = None) -> NagaServiceOrder:
         sess = get_session()
-        data = await get_majsoul_paipu(majsoul_uuid)
+
+        try:
+            data = await get_majsoul_paipu(majsoul_uuid)
+        except MajsoulDownloadError as e:
+            logger.opt(colors=True).warning(f"Failed to download paipu <y>{majsoul_uuid}</y>, code: {e.code}")
+            if e.code == 1203:
+                raise InvalidGameError(f"invalid majsoul_uuid: {majsoul_uuid}") from e
+            else:
+                raise e
 
         if len(data["name"]) != 4:
-            raise UnsupportedGameError()
+            raise UnsupportedGameError("only yonma game is supported")
 
         if "東" in data["rule"]["disp"]:
             rule = NagaGameRule.tonpuu
@@ -318,8 +334,33 @@ class NagaService:
     # needs test
     async def analyze_tenhou(self, haihu_id: str, seat: int, customer_id: int,
                              *,
-                             model_type: NagaHanchanModelType = NagaHanchanModelType.nishiki) -> NagaServiceOrder:
+                             model_type: Union[NagaHanchanModelType,
+                                               NagaTonpuuModelType, None] = None) -> NagaServiceOrder:
         sess = get_session()
+
+        if not self._tenhou_haihu_id_reg.match(haihu_id):
+            raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
+
+        haihu_element = haihu_id.split('-')
+        if len(haihu_element) != 4:
+            raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
+
+        haihu_rule = int(haihu_element[1], 16)
+        is_yonma = not bool(haihu_rule & 16)
+        is_hanchan = bool(haihu_rule & 8)
+        is_kuitan = not bool(haihu_rule & 4)
+        is_online = bool(haihu_rule & 1)
+
+        if is_yonma and is_kuitan and is_online:
+            rule = NagaGameRule.hanchan if is_hanchan else NagaGameRule.tonpuu
+        else:
+            raise UnsupportedGameError("only online kuitan yonma game is supported")
+
+        if model_type is None:
+            if rule == NagaGameRule.hanchan:
+                model_type = NagaHanchanModelType.nishiki
+            else:
+                model_type = NagaTonpuuModelType.sigma
 
         new_order = False
 
@@ -356,7 +397,7 @@ class NagaService:
 
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
                                              customer_id=customer_id,
-                                             cost_np=50,
+                                             cost_np=50 if rule == NagaGameRule.hanchan else 30,
                                              source=NagaOrderSource.tenhou,
                                              model_type=model_type.value,
                                              status=NagaOrderStatus.analyzing,
