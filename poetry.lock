@@ -1325,15 +1325,31 @@ msgpack = ">=1.0.3,<2.0.0"
 nonebot2 = ">=2.0.0-beta.3,<3.0.0"
 
 [[package]]
+name = "nonebot-adapter-qqguild"
+version = "0.2.2"
+description = "QQ Guild adapter for nonebot2"
+category = "dev"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "nonebot_adapter_qqguild-0.2.2-py3-none-any.whl", hash = "sha256:b47cf5793d2aeed53e3d0bd9f0fbd371ce4155e4fb3be48e15e0abe64228ee24"},
+    {file = "nonebot_adapter_qqguild-0.2.2.tar.gz", hash = "sha256:a428dda064f4501c285ea7fb51f81fc17e25dca2c2a82edaf1aa34454e28f1b8"},
+]
+
+[package.dependencies]
+nonebot2 = ">=2.0.0-beta.1,<3.0.0"
+pydantic = ">=1.9.0,<2.0.0"
+
+[[package]]
 name = "nonebot-plugin-access-control"
-version = "0.4.2"
+version = "0.5.1"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_access_control-0.4.2-py3-none-any.whl", hash = "sha256:6daa96da68a4ea04f5ce482e411aafc7f4633580e54a34dee335e6b17df24d43"},
-    {file = "nonebot_plugin_access_control-0.4.2.tar.gz", hash = "sha256:bc4c5d1931b472fdd68a371e64916d235aeb14eb8d33724ffae24893fd3ceb4a"},
+    {file = "nonebot_plugin_access_control-0.5.1-py3-none-any.whl", hash = "sha256:d4be6b6182c4764e1e8a7d86264fa0e74e4f85b44de52471e9254409fb19843a"},
+    {file = "nonebot_plugin_access_control-0.5.1.tar.gz", hash = "sha256:aa41b793ff20c54f4c0ae87db50c20e39c2bf0912302f1531e90ea9c231502d1"},
 ]
 
 [package.dependencies]
@@ -1383,15 +1399,46 @@ toml = ["rtoml (>=0.9.0,<0.10.0)"]
 yaml = ["pyyaml (>=6.0,<7.0)"]
 
 [[package]]
-name = "nonebot-plugin-gocqhttp-cross-machine-upload-file"
-version = "0.1.4"
+name = "nonebot-plugin-escape-url"
+version = "0.1.0"
+description = ""
+category = "dev"
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "nonebot_plugin_escape_url-0.1.0-py3-none-any.whl", hash = "sha256:e3f0bfe5f0ceac5355ea361f501c90835106c12e089750b50902fe6c6afe9af5"},
+    {file = "nonebot_plugin_escape_url-0.1.0.tar.gz", hash = "sha256:6cd1df825a22074a9c118fd51ccf1b2f0aae1ae3b613c5bd16a3eebe80bbfa18"},
+]
+
+[package.dependencies]
+nonebot2 = ">=2.0.0rc4,<3.0.0"
+
+[[package]]
+name = "nonebot-plugin-get-nickname"
+version = "0.1.0"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.4-py3-none-any.whl", hash = "sha256:b904c372be1184ccbfb5f84daa1a3856f6ce51c7b652128a475c775a3ee87b05"},
-    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.4.tar.gz", hash = "sha256:07f8e019efba9b2d5b33a62972699547b6ed35814533ba01d8fbdb89041217f5"},
+    {file = "nonebot_plugin_get_nickname-0.1.0-py3-none-any.whl", hash = "sha256:46f2a745d7d3aa040c18a2ace0732fe23e6c7ba6d44ac04af1ef67c335dbfdd1"},
+    {file = "nonebot_plugin_get_nickname-0.1.0.tar.gz", hash = "sha256:92dbd97856f7af8ad20b65e26f61e2ff84cbfd6b9eda10578f4e76e4dc5252c2"},
+]
+
+[package.dependencies]
+nonebot-plugin-session = ">=0.0.3,<0.0.4"
+nonebot2 = ">=2.0.0rc4,<3.0.0"
+
+[[package]]
+name = "nonebot-plugin-gocqhttp-cross-machine-upload-file"
+version = "0.1.5"
+description = ""
+category = "main"
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.5-py3-none-any.whl", hash = "sha256:ce84fe33e70871875ea0dc70922f6b05cdbb741372581e855eebf1ae0554b636"},
+    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.5.tar.gz", hash = "sha256:1d0b3551748d47e75dc00ff2ef3851acd158655cfcd599731898857aa205d576"},
 ]
 
 [package.dependencies]
@@ -1417,14 +1464,14 @@ typing-extensions = ">=4.0.0"
 
 [[package]]
 name = "nonebot-plugin-majsoul"
-version = "0.2.0.post2"
+version = "0.2.0.post3"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_majsoul-0.2.0.post2-py3-none-any.whl", hash = "sha256:8bd0d9dca7981ab19388d3a8619a845b3d34b950e6f33fa1b62fd611b0936434"},
-    {file = "nonebot_plugin_majsoul-0.2.0.post2.tar.gz", hash = "sha256:c92b72f8837b866bb9faa5bfeef189f906ab14cbf780e71e89ad3a691ca26a15"},
+    {file = "nonebot_plugin_majsoul-0.2.0.post3-py3-none-any.whl", hash = "sha256:fe025ed83bc16fd604e0656f16492c43b7ac721e2c36b0473ee99f4944554365"},
+    {file = "nonebot_plugin_majsoul-0.2.0.post3.tar.gz", hash = "sha256:ca5525294f952b7f27eb8fac54e11c60cf4ffa054697f8b31ede214b5ccec756"},
 ]
 
 [package.dependencies]
@@ -1457,6 +1504,27 @@ files = [
 nonebot2 = ">=2.0.0rc1,<3.0.0"
 pydantic = ">=1.10.5,<2.0.0"
 strenum = ">=0.4.8,<0.5.0"
+
+[[package]]
+name = "nonebot-plugin-session"
+version = "0.0.3"
+description = "Nonebot2 会话信息提取与会话id定义"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "nonebot_plugin_session-0.0.3-py3-none-any.whl", hash = "sha256:4ec0cc6f5d156b7656b2799ad65a362da50613efa8d7d2467dcff27a720a4181"},
+    {file = "nonebot_plugin_session-0.0.3.tar.gz", hash = "sha256:b36e96182ddf4110106ad3bdc0d663913b441385ccf6ff88de98822e855f81c9"},
+]
+
+[package.dependencies]
+nonebot2 = {version = ">=2.0.0-rc.1,<3.0.0", extras = ["fastapi"]}
+strenum = ">=0.4.8,<0.5.0"
+
+[package.extras]
+all = ["nonebot-plugin-datastore (>=0.6.3,<0.7.0)", "nonebot-plugin-send-anything-anywhere (>=0.2.4,<0.3.0)"]
+datastore = ["nonebot-plugin-datastore (>=0.6.3,<0.7.0)"]
+saa = ["nonebot-plugin-send-anything-anywhere (>=0.2.4,<0.3.0)"]
 
 [[package]]
 name = "nonebot2"
@@ -2021,14 +2089,14 @@ test = ["pylint", "pytest", "pytest-black", "pytest-cov", "pytest-pylint"]
 
 [[package]]
 name = "tensoul"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "tensoul-0.1.1-py3-none-any.whl", hash = "sha256:02c4ee56af85d3ad5598129e38bc42a30874011a58b6744ad8008a459a74edf1"},
-    {file = "tensoul-0.1.1.tar.gz", hash = "sha256:cc9c2774e987f6eb4e616e5a6527392a4069fbf686b96afa0bf7a575b3e2f0ad"},
+    {file = "tensoul-0.1.2-py3-none-any.whl", hash = "sha256:adab660580d4f04278e4ceaffb567aab4f1a64a0928b2ebf2fd074bd1ea5eed5"},
+    {file = "tensoul-0.1.2.tar.gz", hash = "sha256:d02b32e1ba7497edd336b597e96aae0669e8a362c7c22856713ad3afc53423fd"},
 ]
 
 [package.dependencies]
@@ -2398,4 +2466,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "802182a4606dc72b012534be07772362928160c577f2ef40168752322054196d"
+content-hash = "95409d553796a31889529b892518fca8c6429644628c22878ef51e80fedc8ef8"

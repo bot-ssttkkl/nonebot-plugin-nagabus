@@ -3,10 +3,10 @@ from functools import wraps
 
 from httpx import HTTPError
 from nonebot import logger
-from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.exception import MatcherException, ActionFailed
 from nonebot.internal.matcher import current_matcher
 from nonebot_plugin_access_control.errors import RateLimitedError
+from nonebot_plugin_saa import MessageFactory
 
 from ..errors import BadRequestError
 from ...naga.service import OrderError, InvalidGameError, UnsupportedGameError
@@ -27,34 +27,42 @@ def handle_error(silently: bool = False):
                 logger.exception(e)
             except BadRequestError as e:
                 if not silently:
-                    await matcher.finish(e.message)
+                    await MessageFactory(e.message).send(reply=True)
+                    await matcher.finish()
             except RateLimitedError as e:
                 if not silently:
-                    await matcher.finish("已达到使用次数上限")
+                    await MessageFactory("已达到使用次数上限").send(reply=True)
+                    await matcher.finish()
             except OrderError as e:
                 logger.warning(e)
                 if not silently:
-                    await matcher.finish("不知道为什么总之解析错误，请在NAGA网页端检查是否已成功解析")
+                    await MessageFactory("不知道为什么总之解析错误，请在NAGA网页端检查是否已成功解析").send(reply=True)
+                    await matcher.finish()
             except InvalidGameError as e:
                 logger.warning(e)
                 if not silently:
-                    await matcher.finish("牌谱链接不正确")
+                    await MessageFactory("牌谱链接不正确").send(reply=True)
+                    await matcher.finish()
             except UnsupportedGameError as e:
                 logger.warning(e)
                 if not silently:
-                    await matcher.finish("只支持四麻牌谱")
+                    await MessageFactory("只支持四麻牌谱").send(reply=True)
+                    await matcher.finish()
             except HTTPError as e:
                 logger.exception(e)
                 if not silently:
-                    await matcher.finish(f"网络错误")
+                    await MessageFactory(f"网络错误").send(reply=True)
+                    await matcher.finish()
             except asyncio.TimeoutError as e:
                 logger.warning(e)
                 if not silently:
-                    await matcher.finish(f"查询超时")
+                    await MessageFactory(f"查询超时").send(reply=True)
+                    await matcher.finish()
             except Exception as e:
                 logger.exception(e)
                 if not silently:
-                    await matcher.finish(f"内部错误：{type(e)}{str(e)}")
+                    await MessageFactory(f"内部错误：{type(e)}{str(e)}").send(reply=True)
+                    await matcher.finish()
 
         return wrapped_func
 

@@ -33,8 +33,11 @@ __plugin_meta__ = PluginMetadata(
 from nonebot import logger, require
 
 require("nonebot_plugin_access_control")
-require("nonebot_plugin_majsoul")
 require("nonebot_plugin_datastore")
+require("nonebot_plugin_get_nickname")
+require("nonebot_plugin_majsoul")
+require("nonebot_plugin_saa")
+require("nonebot_plugin_session")
 
 try:
     from . import matchers
