@@ -35,27 +35,34 @@ class ObservableOrderReport:
         self._observers = []
         self._refresh_worker = None
 
+    @logger.catch
+    async def _refresh_once(self):
+        current = datetime.now(tz=TZ_TOKYO)
+        prev_month = current - monthdelta(months=1)
+
+        list_this_month = await self.api.order_report_list(current.year, current.month)
+        list_prev_month = await self.api.order_report_list(prev_month.year, prev_month.month)
+
+        self.value = OrderReportList(report=[*list_this_month.report, *list_prev_month.report],
+                                     order=[*list_this_month.order, *list_prev_month.order])
+
     async def _refresh(self):
         while True:
-            observers = self._observers
-            self._observers = []
+            try:
+                if len(self._observers) != 0:
+                    logger.trace("refreshing naga orders and reports...")
 
-            if len(observers) != 0:
-                logger.trace("refreshing naga orders and reports...")
+                    await self._refresh_once()
 
-                current = datetime.now(tz=TZ_TOKYO)
-                prev_month = current - monthdelta(months=1)
+                    observers = self._observers
+                    self._observers = []
 
-                list_this_month = await self.api.order_report_list(current.year, current.month)
-                list_prev_month = await self.api.order_report_list(prev_month.year, prev_month.month)
-
-                self.value = OrderReportList(report=[*list_this_month.report, *list_prev_month.report],
-                                             order=[*list_this_month.order, *list_prev_month.order])
-
-                for ob in observers:
-                    x = ob(self.value)
-                    if isawaitable(x):
-                        await x
+                    for ob in observers:
+                        x = ob(self.value)
+                        if isawaitable(x):
+                            await x
+            except BaseException as e:
+                logger.exception(e)
 
             await asyncio.sleep(DURATION)
 

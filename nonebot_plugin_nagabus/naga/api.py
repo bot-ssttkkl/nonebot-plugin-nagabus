@@ -57,12 +57,10 @@ class NagaApi:
         )
         return OrderReportList.parse_obj(resp.json())
 
-    async def analyze_tenhou(self, haihu_id: str, seat: int = 0,
-                             rule: NagaGameRule = NagaGameRule.hanchan,
-                             model_type: Union[None, Sequence[NagaHanchanModelType],
-                                               Sequence[NagaHanchanModelType]] = None) -> AnalyzeTenhou:
-        model_type = self._handle_model_type(rule, model_type)
-
+    async def analyze_tenhou(self, haihu_id: str, seat: int,
+                             rule: NagaGameRule,
+                             model_type: Union[Sequence[NagaHanchanModelType],
+                                               Sequence[NagaHanchanModelType]]) -> AnalyzeTenhou:
         data = {
             "haihu_id": haihu_id,
             "seat": seat,
@@ -84,14 +82,12 @@ class NagaApi:
         else:
             return AnalyzeTenhou(status=200, msg="")
 
-    async def analyze_custom(self, data: Union[list, str], seat: int = 0,
-                             rule: NagaGameRule = NagaGameRule.hanchan,
-                             model_type: Union[None, Sequence[NagaHanchanModelType],
-                                               Sequence[NagaTonpuuModelType]] = None):
+    async def analyze_custom(self, data: Union[list, str], seat: int,
+                             rule: NagaGameRule,
+                             model_type: Union[Sequence[NagaHanchanModelType],
+                                               Sequence[NagaTonpuuModelType]]):
         if not isinstance(data, str):
             data = json.dumps(data, ensure_ascii=False)
-
-        model_type = self._handle_model_type(rule, model_type)
 
         res_data = {
             "json_data": data,

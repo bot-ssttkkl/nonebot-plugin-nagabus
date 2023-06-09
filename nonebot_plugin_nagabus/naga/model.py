@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Any
 
 
 class NagaGameRule(IntEnum):
@@ -28,6 +28,7 @@ class NagaReportPlayer(NamedTuple):
 class NagaModel(NamedTuple):
     major: int
     minor: int
+    old_type: int  # 新版本恒为0，旧版本为NagaHanchanModelType/NagaTonpuuModelType的枚举值
     type: str  # NagaHanchanModelType/NagaTonpuuModelType的枚举值，逗号分隔
 
 
