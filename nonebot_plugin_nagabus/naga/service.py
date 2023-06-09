@@ -202,6 +202,25 @@ class NagaService:
         else:
             rule = NagaGameRule.hanchan
 
+        log = None
+        for i, l in enumerate(data["log"]):
+            if l[0][0] == kyoku:
+                if honba == -1:
+                    # 未指定本场
+                    if (i == 0 or data["log"][i - 1][0][0] != kyoku) \
+                            and (i == len(data["log"]) - 1 or data["log"][i + 1][0][0] != kyoku):
+                        # 该场次只存在一个本场
+                        honba = l[0][1]
+                        log = l
+                    break
+                elif l[0][1] == honba:
+                    log = l
+                    break
+
+        if log is None:
+            available_kyoku_honba = [(l[0][0], l[0][1]) for l in data["log"]]
+            raise InvalidKyokuHonbaError(available_kyoku_honba)
+
         model_type = self._handle_model_type(rule, model_type)
         model_type_str = model_type_to_str(model_type)
 
@@ -238,16 +257,6 @@ class NagaService:
                     # 不存在记录，安排解析
                     logger.opt(colors=True).info(f"Ordering majsoul paipu <y>{majsoul_uuid} "
                                                  f"(kyoku: {kyoku}, honba: {honba})</y> analyze...")
-
-                    log = None
-                    for l in data["log"]:
-                        if l[0][0] == kyoku and l[0][1] == honba:
-                            log = l
-                            break
-
-                    if log is None:
-                        available_kyoku_honba = [(l[0][0], l[0][1]) for l in data["log"]]
-                        raise InvalidKyokuHonbaError(available_kyoku_honba)
 
                     # data["log"] = log
                     data = {

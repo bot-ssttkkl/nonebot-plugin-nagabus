@@ -59,7 +59,7 @@ naga_analyze_matcher = on_command("naga", priority=10)
 
 uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
 
-kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局([0123456789零一两二三四五六七八九十百千万亿]+)本场")
+kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789零一两二三四五六七八九十百千万亿]+)本场)?")
 
 
 @naga_analyze_matcher.handle()
@@ -75,13 +75,13 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
 
         uuid = mat.group(0)
 
-        kyoku = None
-        honba = None
+        kyoku = -1
+        honba = -1
 
         if len(args) >= 2:
             mat = kyoku_honba_reg.search(args[1])
             if mat:
-                raw_wind, raw_kyoku, raw_honba = mat.groups()
+                raw_wind, raw_kyoku, _, raw_honba = mat.groups()
 
                 try:
                     kyoku = decode_integer(raw_kyoku) - 1
@@ -90,14 +90,12 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                     elif raw_wind == '西':
                         kyoku += 8
 
-                    honba = decode_integer(raw_honba)
+                    if raw_honba is not None:
+                        honba = decode_integer(raw_honba)
                 except ValueError:
                     pass
 
-        if kyoku is None or honba is None:
-            await analyze_majsoul(matcher, session, uuid, -1, -1)  # 让其发送该局的场次本场信息
-        else:
-            await analyze_majsoul(matcher, session, uuid, kyoku, honba)
+        await analyze_majsoul(matcher, session, uuid, kyoku, honba)  # 如果未指定场次本场，则让其发送该局的场次本场信息
     elif "tenhou" in args[0]:
         tenhou_url = args[0].strip()
 
