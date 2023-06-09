@@ -9,7 +9,7 @@ from nonebot_plugin_access_control.errors import RateLimitedError
 from nonebot_plugin_saa import MessageFactory
 
 from ..errors import BadRequestError
-from ...naga.service import OrderError, InvalidGameError, UnsupportedGameError
+from ...naga.errors import OrderError, InvalidGameError, UnsupportedGameError
 
 
 def handle_error(silently: bool = False):

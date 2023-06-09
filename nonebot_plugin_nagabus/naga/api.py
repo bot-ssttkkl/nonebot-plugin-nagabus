@@ -1,11 +1,12 @@
 import json
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Sequence
 
 from httpx import AsyncClient
 from nonebot import logger
 from pydantic import BaseModel
 
 from .model import NagaReport, NagaOrder, NagaHanchanModelType, NagaTonpuuModelType, NagaGameRule
+from .utils import model_type_to_str
 
 
 class OrderReportList(BaseModel):
@@ -56,13 +57,17 @@ class NagaApi:
         )
         return OrderReportList.parse_obj(resp.json())
 
-    async def analyze_tenhou(self, haihu_id: str, seat: int,
-                             model_type: NagaHanchanModelType = NagaHanchanModelType.nishiki) -> AnalyzeTenhou:
+    async def analyze_tenhou(self, haihu_id: str, seat: int = 0,
+                             rule: NagaGameRule = NagaGameRule.hanchan,
+                             model_type: Union[None, Sequence[NagaHanchanModelType],
+                                               Sequence[NagaHanchanModelType]] = None) -> AnalyzeTenhou:
+        model_type = self._handle_model_type(rule, model_type)
+
         data = {
             "haihu_id": haihu_id,
             "seat": seat,
             "reanalysis": 0,
-            "player_type": model_type.value,
+            "player_types": model_type_to_str(model_type),
             "csrfmiddlewaretoken": self.client.cookies["csrftoken"]
         }
 
@@ -81,21 +86,18 @@ class NagaApi:
 
     async def analyze_custom(self, data: Union[list, str], seat: int = 0,
                              rule: NagaGameRule = NagaGameRule.hanchan,
-                             model_type: Union[
-                                 NagaHanchanModelType, NagaTonpuuModelType] = NagaHanchanModelType.nishiki):
+                             model_type: Union[None, Sequence[NagaHanchanModelType],
+                                               Sequence[NagaTonpuuModelType]] = None):
         if not isinstance(data, str):
             data = json.dumps(data, ensure_ascii=False)
 
-        if rule == NagaGameRule.hanchan:
-            assert isinstance(model_type, NagaHanchanModelType)
-        elif rule == NagaGameRule.tonpuu:
-            assert isinstance(model_type, NagaTonpuuModelType)
+        model_type = self._handle_model_type(rule, model_type)
 
         res_data = {
             "json_data": data,
             "seat": seat,
             "game_type": rule.value,
-            "player_type": model_type.value,
+            "player_types": model_type_to_str(model_type),
             "csrfmiddlewaretoken": self.client.cookies["csrftoken"]
         }
 

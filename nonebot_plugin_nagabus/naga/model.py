@@ -28,7 +28,7 @@ class NagaReportPlayer(NamedTuple):
 class NagaModel(NamedTuple):
     major: int
     minor: int
-    type: int
+    type: str  # NagaHanchanModelType/NagaTonpuuModelType的枚举值，逗号分隔
 
 
 class NagaReport(NamedTuple):

@@ -4,17 +4,21 @@ import re
 from asyncio import Lock
 from datetime import datetime, timezone
 from inspect import isawaitable
-from typing import Dict, Union, Optional, List, Tuple
+from typing import Dict, Union, Optional, List, Sequence
 
 from monthdelta import monthdelta
 from nonebot import logger
+from nonebot_plugin_session import Session
+from nonebot_plugin_session.model import get_or_add_session_model
 from sqlalchemy import select, update
 from tensoul.downloader import MajsoulDownloadError
 
 from .api import NagaApi, OrderReportList
+from .errors import InvalidGameError, UnsupportedGameError, OrderError, InvalidKyokuHonbaError
 from .fake_api import FakeNagaApi
 from .model import NagaGameRule, NagaHanchanModelType, NagaTonpuuModelType, NagaOrder, NagaReport, NagaOrderStatus, \
     NagaServiceOrder, NagaServiceUserStatistic
+from .utils import model_type_to_str
 from ..config import conf
 from ..data.naga import MajsoulOrderOrm, NagaOrderOrm, NagaOrderSource
 from ..data.session import get_session
@@ -59,28 +63,6 @@ class ObservableOrderReport:
         self._observers.append(callback)
         if self._refresh_worker is None:
             self._refresh_worker = asyncio.create_task(self._refresh())
-
-
-class NagaError(BaseException):
-    ...
-
-
-class OrderError(NagaError):
-    ...
-
-
-class InvalidGameError(NagaError):
-    ...
-
-
-class UnsupportedGameError(NagaError):
-    ...
-
-
-class InvalidKyokuHonbaError(NagaError):
-    def __init__(self, available_kyoku_honba: List[Tuple[int, int]]):
-        super().__init__()
-        self.available_kyoku_honba = available_kyoku_honba
 
 
 class NagaService:
@@ -135,8 +117,8 @@ class NagaService:
 
     async def _order_custom(self, data: Union[list, str],
                             rule: NagaGameRule,
-                            model_type: Union[NagaHanchanModelType,
-                                              NagaTonpuuModelType]) -> NagaOrder:
+                            model_type: Union[None, Sequence[NagaHanchanModelType],
+                                              Sequence[NagaTonpuuModelType]] = None) -> NagaOrder:
         current = datetime.now(tz=TZ_TOKYO)
         await self.api.analyze_custom(data, 0, rule, model_type)
 
@@ -178,11 +160,29 @@ class NagaService:
 
         return await order_fut
 
-    async def analyze_majsoul(self, majsoul_uuid: str, kyoku: int, honba: int,
-                              customer_id: int,
-                              *,
-                              model_type: Union[NagaHanchanModelType,
-                                                NagaTonpuuModelType, None] = None) -> NagaServiceOrder:
+    @staticmethod
+    def _handle_model_type(rule: NagaGameRule,
+                           model_type: Union[None, Sequence[NagaHanchanModelType],
+                                             Sequence[NagaHanchanModelType]]) -> Union[Sequence[NagaHanchanModelType],
+                                                                                       Sequence[NagaHanchanModelType]]:
+        if rule == NagaGameRule.hanchan:
+            if model_type is None:
+                model_type = [NagaHanchanModelType.nishiki, NagaHanchanModelType.kagashi]
+            assert isinstance(model_type, list) or isinstance(model_type, tuple)
+            for t in model_type:
+                assert isinstance(t, NagaHanchanModelType)
+        elif rule == NagaGameRule.tonpuu:
+            if model_type is None:
+                model_type = [NagaTonpuuModelType.nu, NagaTonpuuModelType.sigma]
+            assert isinstance(model_type, list) or isinstance(model_type, tuple)
+            for t in model_type:
+                assert isinstance(t, NagaTonpuuModelType)
+
+        return model_type
+
+    async def analyze_majsoul(self, majsoul_uuid: str, kyoku: int, honba: int, session: Session,
+                              *, model_type: Union[None, Sequence[NagaHanchanModelType],
+                                                   Sequence[NagaTonpuuModelType]] = None) -> NagaServiceOrder:
         sess = get_session()
 
         try:
@@ -202,11 +202,8 @@ class NagaService:
         else:
             rule = NagaGameRule.hanchan
 
-        if model_type is None:
-            if rule == NagaGameRule.hanchan:
-                model_type = NagaHanchanModelType.nishiki
-            else:
-                model_type = NagaTonpuuModelType.sigma
+        model_type = self._handle_model_type(rule, model_type)
+        model_type_str = model_type_to_str(model_type)
 
         haihu_id = ""
         new_order = False
@@ -215,7 +212,7 @@ class NagaService:
             stmt = select(MajsoulOrderOrm).where(MajsoulOrderOrm.paipu_uuid == majsoul_uuid,
                                                  MajsoulOrderOrm.kyoku == kyoku,
                                                  MajsoulOrderOrm.honba == honba,
-                                                 MajsoulOrderOrm.model_type == model_type.value)
+                                                 MajsoulOrderOrm.model_type == model_type_str)
 
             order_orm: Optional[MajsoulOrderOrm] = (await sess.execute(stmt)).scalar_one_or_none()
             if order_orm is not None:
@@ -224,8 +221,8 @@ class NagaService:
                     return order_orm.order
                 else:  # 超过90s仍未分析完成则删除重来
                     logger.opt(colors=True).info(f"Delete majsoul paipu <y>{majsoul_uuid} "
-                                                 f"(kyoku: {kyoku}, honba: {honba}, "
-                                                 f"model_type: {model_type.name})</y> analyze order: {order_orm.naga_haihu_id}, "
+                                                 f"(kyoku: {kyoku}, honba: {honba})</y> "
+                                                 f"analyze order: {order_orm.naga_haihu_id}, "
                                                  f"because it takes over 90 seconds and still not done")
                     await sess.delete(order_orm.order)
                     await sess.delete(order_orm)
@@ -240,8 +237,7 @@ class NagaService:
                 if local_order is None:
                     # 不存在记录，安排解析
                     logger.opt(colors=True).info(f"Ordering majsoul paipu <y>{majsoul_uuid} "
-                                                 f"(kyoku: {kyoku}, honba: {honba}, "
-                                                 f"model_type: {model_type.name})</y> analyze...")
+                                                 f"(kyoku: {kyoku}, honba: {honba})</y> analyze...")
 
                     log = None
                     for l in data["log"]:
@@ -266,11 +262,12 @@ class NagaService:
 
                     new_order = True
 
+                    session_model = await get_or_add_session_model(session, sess)
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
-                                             customer_id=customer_id,
+                                             customer_id=session_model.id,
                                              cost_np=10,
                                              source=NagaOrderSource.majsoul,
-                                             model_type=model_type.value,
+                                             model_type=model_type_str,
                                              status=NagaOrderStatus.analyzing,
                                              create_time=datetime.now(tz=timezone.utc),
                                              update_time=datetime.now(tz=timezone.utc))
@@ -279,7 +276,7 @@ class NagaService:
                                                         paipu_uuid=majsoul_uuid,
                                                         kyoku=kyoku,
                                                         honba=honba,
-                                                        model_type=model_type.value,
+                                                        model_type=model_type_str,
                                                         order=order_orm)
 
                     sess.add(order_orm)
@@ -290,31 +287,27 @@ class NagaService:
             # 存在记录
             if local_order.status == NagaOrderStatus.ok:
                 logger.opt(colors=True).info(f"Found a existing majsoul paipu <y>{majsoul_uuid} "
-                                             f"(kyoku: {kyoku}, honba: {honba}, "
-                                             f"model_type: {model_type.name})</y> "
+                                             f"(kyoku: {kyoku}, honba: {honba})</y> "
                                              f"analyze report: {local_order.haihu_id}")
                 report = NagaReport(*json.loads(local_order.naga_report))
                 return NagaServiceOrder(report, 0)
 
             haihu_id = local_order.naga_haihu_id
             logger.opt(colors=True).info(f"Found a processing majsoul paipu <y>{majsoul_uuid} "
-                                         f"(kyoku: {kyoku}, honba: {honba}, "
-                                         f"model_type: {model_type.name})</y> "
+                                         f"(kyoku: {kyoku}, honba: {honba})</y> "
                                          f"analyze order: {haihu_id}")
 
         assert haihu_id != ""
 
         logger.opt(colors=True).info(f"Waiting for majsoul paipu <y>{majsoul_uuid} "
-                                     f"(kyoku: {kyoku}, honba: {honba}, "
-                                     f"model_type: {model_type.name})</y> "
+                                     f"(kyoku: {kyoku}, honba: {honba})</y> "
                                      f"analyze report: {haihu_id} ...")
         report = await self._get_report(haihu_id)
 
         if new_order:
             # 需要更新之前创建的NagaOrderOrm
             logger.opt(colors=True).debug(f"Updating majsoul paipu <y>{majsoul_uuid} "
-                                          f"(kyoku: {kyoku}, honba: {honba}, "
-                                          f"model_type: {model_type.name})</y> "
+                                          f"(kyoku: {kyoku}, honba: {honba})</y> "
                                           f"analyze report: {haihu_id}...")
             stmt = update(NagaOrderOrm).where(NagaOrderOrm.haihu_id == haihu_id).values(
                 status=NagaOrderStatus.ok, naga_report=json.dumps(report), update_time=datetime.now(timezone.utc)
@@ -326,16 +319,17 @@ class NagaService:
         else:
             return NagaServiceOrder(report, 0)
 
-    async def _order_tenhou(self, haihu_id: str, seat: int, model_type: NagaHanchanModelType):
-        res = await self.api.analyze_tenhou(haihu_id, seat, model_type)
+    async def _order_tenhou(self, haihu_id: str, seat: int, rule: NagaGameRule,
+                            model_type: Union[None, Sequence[NagaHanchanModelType],
+                                              Sequence[NagaHanchanModelType]] = None):
+        res = await self.api.analyze_tenhou(haihu_id, seat, rule, model_type)
         if res.status != 200:
             raise OrderError(res.msg)
 
     # needs test
-    async def analyze_tenhou(self, haihu_id: str, seat: int, customer_id: int,
-                             *,
-                             model_type: Union[NagaHanchanModelType,
-                                               NagaTonpuuModelType, None] = None) -> NagaServiceOrder:
+    async def analyze_tenhou(self, haihu_id: str, seat: int, session: Session,
+                             *, model_type: Union[None, Sequence[NagaHanchanModelType],
+                                                  Sequence[NagaHanchanModelType]] = None) -> NagaServiceOrder:
         sess = get_session()
 
         if not self._tenhou_haihu_id_reg.match(haihu_id):
@@ -356,17 +350,14 @@ class NagaService:
         else:
             raise UnsupportedGameError("only online kuitan yonma game is supported")
 
-        if model_type is None:
-            if rule == NagaGameRule.hanchan:
-                model_type = NagaHanchanModelType.nishiki
-            else:
-                model_type = NagaTonpuuModelType.sigma
+        model_type = self._handle_model_type(rule, model_type)
+        model_type_str = model_type_to_str(model_type)
 
         new_order = False
 
         async def _get_local_order() -> Optional[NagaOrderOrm]:
             stmt = select(NagaOrderOrm).where(NagaOrderOrm.haihu_id == haihu_id,
-                                              NagaOrderOrm.model_type == model_type.value)
+                                              NagaOrderOrm.model_type == model_type_str)
 
             order_orm: Optional[NagaOrderOrm] = (await sess.execute(stmt)).scalar_one_or_none()
             if order_orm is not None:
@@ -374,8 +365,7 @@ class NagaService:
                         datetime.now(tz=timezone.utc).timestamp() - order_orm.update_time.timestamp() < 300:
                     return order_orm
                 else:  # 超过90s仍未分析完成则删除重来
-                    logger.opt(colors=True).info(f"Delete tenhou paipu <y>{haihu_id} "
-                                                 f"(model_type: {model_type.name})</y> analyze order "
+                    logger.opt(colors=True).info(f"Delete tenhou paipu <y>{haihu_id}</y> analyze order "
                                                  f"because it takes over 90 seconds and still not done")
                     await sess.delete(order_orm)
                     await sess.commit()
@@ -388,18 +378,19 @@ class NagaService:
                 local_order = await _get_local_order()
                 if local_order is None:
                     # 不存在记录，安排解析
-                    logger.opt(colors=True).info(f"Ordering tenhou paipu <y>{haihu_id} "
-                                                 f"(model_type: {model_type.name})</y> analyze...")
+                    logger.opt(colors=True).info(f"Ordering tenhou paipu <y>{haihu_id}</y> analyze...")
 
-                    await self._order_tenhou(haihu_id, seat, model_type)
+                    await self._order_tenhou(haihu_id, seat, rule, model_type)
 
                     new_order = True
 
+                    session_model = await get_or_add_session_model(session, sess)
+
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
-                                             customer_id=customer_id,
+                                             customer_id=session_model.id,
                                              cost_np=50 if rule == NagaGameRule.hanchan else 30,
                                              source=NagaOrderSource.tenhou,
-                                             model_type=model_type.value,
+                                             model_type=model_type_str,
                                              status=NagaOrderStatus.analyzing,
                                              create_time=datetime.now(tz=timezone.utc),
                                              update_time=datetime.now(tz=timezone.utc))
@@ -410,25 +401,21 @@ class NagaService:
         if local_order is not None:
             # 存在记录
             if local_order.status == NagaOrderStatus.ok:
-                logger.opt(colors=True).info(f"Found a existing tenhou paipu <y>{haihu_id} "
-                                             f"(model_type: {model_type.name})</y> "
+                logger.opt(colors=True).info(f"Found a existing tenhou paipu <y>{haihu_id})</y> "
                                              "analyze report")
                 report = NagaReport(*json.loads(local_order.naga_report))
                 return NagaServiceOrder(report, 0)
 
-            logger.opt(colors=True).info(f"Found a processing tenhou paipu <y>{haihu_id} "
-                                         f"(model_type: {model_type.name})</y> "
+            logger.opt(colors=True).info(f"Found a processing tenhou paipu <y>{haihu_id})</y> "
                                          "analyze order")
 
-        logger.opt(colors=True).info(f"Waiting for tenhou paipu <y>{haihu_id} "
-                                     f"(model_type: {model_type.name})</y> "
+        logger.opt(colors=True).info(f"Waiting for tenhou paipu <y>{haihu_id})</y> "
                                      f"analyze report...")
         report = await self._get_report(haihu_id)
 
         if new_order:
             # 需要更新之前创建的NagaOrderOrm
-            logger.opt(colors=True).debug(f"Updating tenhou paipu <y>{haihu_id} "
-                                          f"(model_type: {model_type.name})</y> "
+            logger.opt(colors=True).debug(f"Updating tenhou paipu <y>{haihu_id})</y> "
                                           "analyze report...")
             stmt = update(NagaOrderOrm).where(NagaOrderOrm.haihu_id == haihu_id).values(
                 status=NagaOrderStatus.ok, naga_report=json.dumps(report), update_time=datetime.now(timezone.utc)

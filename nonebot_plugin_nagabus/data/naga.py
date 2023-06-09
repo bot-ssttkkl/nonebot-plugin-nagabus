@@ -23,7 +23,7 @@ class NagaOrderOrm(SqlModel):
     customer_id: Mapped[int]
     cost_np: Mapped[int]
     source: Mapped[NagaOrderSource]
-    model_type: Mapped[int]
+    model_type: Mapped[str]
     status: Mapped[NagaOrderStatus]
     naga_report: Mapped[Optional[str]]  # json of NagaReport
     create_time: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
@@ -39,7 +39,7 @@ class MajsoulOrderOrm(SqlModel):
     paipu_uuid: Mapped[str] = mapped_column(index=True)
     kyoku: Mapped[int]
     honba: Mapped[int]
-    model_type: Mapped[int]
+    model_type: Mapped[str]
 
     order: Mapped[NagaOrderOrm] = relationship(foreign_keys="MajsoulOrderOrm.naga_haihu_id",
                                                cascade="save-update, delete",

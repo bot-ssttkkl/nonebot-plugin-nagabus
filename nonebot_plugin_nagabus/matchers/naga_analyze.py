@@ -7,22 +7,21 @@ from nonebot.internal.params import Depends
 from nonebot.params import CommandArg
 from nonebot_plugin_saa import MessageFactory
 from nonebot_plugin_session import extract_session, Session
-from nonebot_plugin_session.model import get_or_add_session_model
 
 from .errors import BadRequestError
 from .interceptors.handle_error import handle_error
 from ..ac import ac
 from ..naga import naga
-from ..naga.service import InvalidKyokuHonbaError
+from ..naga.errors import InvalidKyokuHonbaError
 from ..utils.integer import decode_integer
 from ..utils.nonebot import default_cmd_start
 
 analyze_srv = ac.create_subservice("analyze")
 
 
-async def analyze_majsoul(matcher: Matcher, customer_id: int, uuid: str, kyoku: int, honba: int):
+async def analyze_majsoul(matcher: Matcher, session: Session, uuid: str, kyoku: int, honba: int):
     try:
-        report, cost_np = await naga.analyze_majsoul(uuid, kyoku, honba, customer_id)
+        report, cost_np = await naga.analyze_majsoul(uuid, kyoku, honba, session)
         await MessageFactory(f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw=0").send(reply=True)
 
         if cost_np == 0:
@@ -44,8 +43,8 @@ async def analyze_majsoul(matcher: Matcher, customer_id: int, uuid: str, kyoku: 
         raise BadRequestError(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）") from e
 
 
-async def analyze_tenhou(matcher: Matcher, customer_id: int, haihu_id: str, seat: int):
-    report, cost_np = await naga.analyze_tenhou(haihu_id, seat, customer_id)
+async def analyze_tenhou(matcher: Matcher, session: Session, haihu_id: str, seat: int):
+    report, cost_np = await naga.analyze_tenhou(haihu_id, seat, session)
     await MessageFactory(f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw={seat}").send(reply=True)
 
     if cost_np == 0:
@@ -68,8 +67,6 @@ kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局([0123456789�
 @analyze_srv.patch_handler(retire_on_throw=True)
 async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                        session: Session = Depends(extract_session)):
-    model = await get_or_add_session_model(session)
-
     args = cmd_args.extract_plain_text().split(' ')
     if "maj-soul" in args[0]:
         mat = uuid_reg.search(args[0])
@@ -98,9 +95,9 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                     pass
 
         if kyoku is None or honba is None:
-            await analyze_majsoul(matcher, model.id, uuid, -1, -1)  # 让其发送该局的场次本场信息
+            await analyze_majsoul(matcher, session, uuid, -1, -1)  # 让其发送该局的场次本场信息
         else:
-            await analyze_majsoul(matcher, model.id, uuid, kyoku, honba)
+            await analyze_majsoul(matcher, session, uuid, kyoku, honba)
     elif "tenhou" in args[0]:
         tenhou_url = args[0].strip()
 
@@ -112,7 +109,7 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
         if "tw" in tenhou_query and len(tenhou_query["tw"]) > 0:
             seat = int(tenhou_query["tw"][0])
 
-        await analyze_tenhou(matcher, model.id, haihu_id, seat)
+        await analyze_tenhou(matcher, session, haihu_id, seat)
     else:
         await MessageFactory(
             "用法：\n"
