@@ -76,7 +76,7 @@ class NagaService:
     _tenhou_haihu_id_reg = re.compile(r"^20\d{8}gm-[a-f\d]{4}-[a-z\d]{4,5}-[a-zA-Z\d]{8}$")
 
     def __init__(self, cookies: Dict[str, str], timeout: float = 90.0):
-        if conf.naga_fake_api:
+        if conf().naga_fake_api:
             self.api = FakeNagaApi()
             logger.warning("using fake naga api")
         else:

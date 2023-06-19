@@ -32,11 +32,19 @@ class Config(BaseSettings):
         extra = "ignore"
 
 
-try:
-    conf = Config(**get_driver().config.dict())
-except ValidationError as e:
-    for err in e.errors():
-        if err["loc"] == ("naga_cookies",) and err["type"] == "value_error.missing":
-            raise ConfigError("Please configure naga_cookies in your .env file!") from e
-    else:
-        raise e
+_conf = None
+
+
+def conf() -> Config:
+    global _conf
+    if _conf is None:
+        try:
+            _conf = Config(**get_driver().config.dict())
+        except ValidationError as e:
+            for err in e.errors():
+                if err["loc"] == ("naga_cookies",) and err["type"] == "value_error.missing":
+                    raise ConfigError("Please configure naga_cookies in your .env file!") from e
+            else:
+                raise e
+
+    return _conf

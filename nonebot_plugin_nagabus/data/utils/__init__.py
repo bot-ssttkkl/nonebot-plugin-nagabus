@@ -1,6 +1,6 @@
 from ...config import conf
 
-dialect = conf.datastore_database_dialect
+dialect = conf().datastore_database_dialect
 if dialect == 'sqlite':
     from sqlalchemy.dialects.sqlite import insert as _insert
     from sqlalchemy.dialects.sqlite import JSON as _JSON
