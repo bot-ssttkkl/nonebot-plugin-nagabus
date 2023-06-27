@@ -465,3 +465,6 @@ class NagaService:
         statistic = [NagaServiceUserStatistic(x[0], x[1]) for x in statistic.items()]
         statistic.sort(key=lambda x: x.cost_np, reverse=True)
         return statistic
+
+    async def get_rest_np(self) -> int:
+        return await self.api.get_rest_np()

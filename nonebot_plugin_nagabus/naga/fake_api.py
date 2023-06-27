@@ -18,6 +18,7 @@ class FakeNagaApi:
     def __init__(self):
         self.report = []
         self.order = []
+        self.rest_np = 1500
 
     async def close(self):
         ...
@@ -50,6 +51,8 @@ class FakeNagaApi:
                           model=NagaModel(2, 2, 0, model_type_to_str(model_type)), rule=rule)
         create_task(self._produce_order(order))
 
+        self.rest_np -= 10
+
         report_id = str(uuid4())
         report = NagaReport(haihu_id=haihu_id, players=[NagaReportPlayer("AI", 0)] * 4, report_id=report_id, seat=0,
                             model=NagaModel(2, 2, 0, model_type_to_str(model_type)), rule=rule)
@@ -68,9 +71,17 @@ class FakeNagaApi:
                           rule=NagaGameRule.hanchan)
         create_task(self._produce_order(order))
 
+        if rule == NagaGameRule.hanchan:
+            self.rest_np -= 50
+        else:
+            self.rest_np -= 30
+
         report_id = str(uuid4())
         report = NagaReport(haihu_id=haihu_id, players=[NagaReportPlayer("AI", 0)] * 4, report_id=report_id, seat=seat,
                             model=NagaModel(2, 2, 0, model_type_to_str(model_type)), rule=NagaGameRule.hanchan)
         create_task(self._produce_report(report))
 
         return AnalyzeTenhou(status=200, msg="")
+
+    async def get_resp_np(self) -> int:
+        return self.rest_np

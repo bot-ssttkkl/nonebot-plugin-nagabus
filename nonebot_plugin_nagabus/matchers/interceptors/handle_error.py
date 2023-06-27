@@ -34,7 +34,7 @@ def handle_error(silently: bool = False):
                     await MessageFactory("已达到使用次数上限").send(reply=True)
                     await matcher.finish()
             except OrderError as e:
-                logger.warning(e)
+                logger.exception(e)
                 if not silently:
                     await MessageFactory("不知道为什么总之解析错误，请在NAGA网页端检查是否已成功解析").send(reply=True)
                     await matcher.finish()

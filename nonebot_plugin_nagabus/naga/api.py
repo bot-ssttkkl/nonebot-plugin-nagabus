@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict, List, Union, Sequence
 
 from httpx import AsyncClient
@@ -20,7 +21,7 @@ class AnalyzeTenhou(BaseModel):
 
 
 class NagaApi:
-    _BASE_URL = "https://naga.dmv.nico/naga_report/api"
+    _BASE_URL = "https://naga.dmv.nico/naga_report"
 
     _HEADER = {
         "Cache-Control": "no-cache",
@@ -49,7 +50,7 @@ class NagaApi:
 
     async def order_report_list(self, year: int, month: int) -> OrderReportList:
         resp = await self.client.get(
-            "/order_report_list/",
+            "/api/order_report_list/",
             headers={
                 "Referer": "https://naga.dmv.nico/naga_report/order_report_list/"
             },
@@ -70,7 +71,7 @@ class NagaApi:
         }
 
         resp = await self.client.post(
-            "/url_analyze/",
+            "/api/url_analyze/",
             headers={
                 "Referer": "https://naga.dmv.nico/naga_report/order_form/"
             },
@@ -98,9 +99,18 @@ class NagaApi:
         }
 
         await self.client.post(
-            "/custom_haihu_analyze/",
+            "/api/custom_haihu_analyze/",
             headers={
                 "Referer": "https://naga.dmv.nico/naga_report/order_form/"
             },
             data=res_data
         )
+
+    async def get_rest_np(self) -> int:
+        resp = await self.client.get(
+            "/order_form/"
+        )
+        mat = re.search(r"const base_left_point = (\d+)", resp.text)
+        if mat is None:
+            raise RuntimeError("cannot get base_left_point")
+        return int(mat.group(1))

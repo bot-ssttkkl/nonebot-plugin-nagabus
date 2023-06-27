@@ -3,7 +3,7 @@ nonebot-plugin-nagabus
 
 @Author         : ssttkkl
 @License        : AGPLv3
-@GitHub         : https://github.com/ssttkkl/nonebot-plugin-nagabus
+@GitHub         : https://github.com/bot-ssttkkl/nonebot-plugin-nagabus
 """
 
 from nonebot import require, logger
@@ -32,7 +32,7 @@ __usage__ = f"""
 
 以上命令格式中，以<>包裹的表示一个参数。
 
-详细说明：参见https://github.com/ssttkkl/nonebot-plugin-nagabus
+详细说明：参见https://github.com/bot-ssttkkl/nonebot-plugin-nagabus
 """.strip()
 
 __plugin_meta__ = PluginMetadata(
@@ -40,8 +40,9 @@ __plugin_meta__ = PluginMetadata(
     description='为群友提供NAGA拼车服务',
     usage=__usage__,
     type="application",
-    homepage="https://github.com/ssttkkl/nonebot-plugin-nagabus",
-    config=Config
+    homepage="https://github.com/bot-ssttkkl/nonebot-plugin-nagabus",
+    config=Config,
+    supported_adapters={"~onebot.v11", "~onebot.v12", "~qqguild", "~kaiheila", "~telegram"}
 )
 
 try:

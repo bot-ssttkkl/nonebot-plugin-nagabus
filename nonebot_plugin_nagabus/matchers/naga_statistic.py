@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import StringIO
-from typing import Optional
+from typing import Optional, List
 
 from monthdelta import monthdelta
 from nonebot import on_command, Bot
@@ -14,14 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .interceptors.handle_error import handle_error
 from ..ac import ac
 from ..naga import naga
+from ..naga.model import NagaServiceUserStatistic
 from ..utils.tz import TZ_TOKYO
 
 statistic_srv = ac.create_subservice("statistic")
 
 
-async def naga_statistic(bot: Bot, year: int, month: int):
-    statistic = await naga.statistic(year, month)
-
+async def naga_statistic(bot: Bot, year: int, month: int, statistic: List[NagaServiceUserStatistic],
+                         rest_np: Optional[int] = None):
     total_cost_np = 0
 
     async with AsyncSession(get_engine()) as db_sess:
@@ -37,7 +37,10 @@ async def naga_statistic(bot: Bot, year: int, month: int):
 
                 total_cost_np += s.cost_np
 
-            msg = (f"{year}年{month}月共使用{total_cost_np}NP\n\n" + sio.getvalue()).strip()
+            msg = f"{year}年{month}月共使用{total_cost_np}NP"
+            if rest_np is not None:
+                msg += f"，剩余{rest_np}NP"
+            msg = (msg + "\n\n" + sio.getvalue()).strip()
 
             await MessageFactory(msg).send(reply=True)
 
@@ -50,7 +53,9 @@ statistic_srv.patch_matcher(naga_statistic_this_month_matcher)
 @handle_error()
 async def naga_statistic_this_month(bot: Bot):
     cur = datetime.now(tz=TZ_TOKYO)
-    await naga_statistic(bot, cur.year, cur.month)
+    statistic = await naga.statistic(cur.year, cur.month)
+    rest_np = await naga.get_rest_np()
+    await naga_statistic(bot, cur.year, cur.month, statistic, rest_np)
 
 
 naga_statistic_prev_month_matcher = on_command("naga上月使用情况", priority=5, block=True)
@@ -61,4 +66,5 @@ statistic_srv.patch_matcher(naga_statistic_prev_month_matcher)
 @handle_error()
 async def naga_statistic_prev_month(bot: Bot):
     prev_month = datetime.now(tz=TZ_TOKYO) - monthdelta(months=1)
-    await naga_statistic(bot, prev_month.year, prev_month.month)
+    statistic = await naga.statistic(prev_month.year, prev_month.month)
+    await naga_statistic(bot, prev_month.year, prev_month.month, statistic)
