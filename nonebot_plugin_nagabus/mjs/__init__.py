@@ -1,7 +1,7 @@
 import json
 
 from nonebot import logger
-from nonebot_plugin_majsoul.paipu import get_downloader
+from nonebot_plugin_majsoul.paipu import download_paipu
 from sqlalchemy import select
 
 from ..data.mjs import MajsoulPaipuOrm
@@ -20,7 +20,7 @@ async def get_majsoul_paipu(uuid: str):
         return json.loads(res.content)
 
     logger.opt(colors=True).info(f"Downloading majsoul paipu <y>{uuid}</y> ...")
-    data = await get_downloader().download(uuid)
+    data = await download_paipu(uuid)
 
     stmt = (insert(MajsoulPaipuOrm)
             .values(paipu_uuid=uuid, content=json.dumps(data))

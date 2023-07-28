@@ -2,7 +2,7 @@ import json
 import re
 from typing import Dict, List, Union, Sequence
 
-from httpx import AsyncClient
+from httpx import AsyncClient, Cookies
 from nonebot import logger
 from pydantic import BaseModel
 
@@ -29,7 +29,10 @@ class NagaApi:
     }
 
     def __init__(self, cookies: Dict[str, str]):
+        self.cookies = Cookies(cookies)
+
         async def req_hook(request):
+            self.cookies.set_cookie_header(request)
             logger.trace(f"Request: {request.method} {request.url} - Waiting for response")
 
         async def resp_hook(response):
@@ -39,10 +42,9 @@ class NagaApi:
 
         self.client: AsyncClient = AsyncClient(
             base_url=self._BASE_URL,
-            cookies=cookies,
             headers=self._HEADER,
             follow_redirects=True,
-            event_hooks={'request': [req_hook], 'response': [resp_hook]}
+            event_hooks={'request': [req_hook], 'response': [resp_hook]},
         )
 
     async def close(self):
