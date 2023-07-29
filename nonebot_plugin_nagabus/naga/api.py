@@ -69,7 +69,7 @@ class NagaApi:
             "seat": seat,
             "reanalysis": 0,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": self.client.cookies["csrftoken"]
+            "csrfmiddlewaretoken": self.cookies["csrftoken"]
         }
 
         resp = await self.client.post(
@@ -97,7 +97,7 @@ class NagaApi:
             "seat": seat,
             "game_type": rule.value,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": self.client.cookies["csrftoken"]
+            "csrfmiddlewaretoken": self.cookies["csrftoken"]
         }
 
         await self.client.post(
