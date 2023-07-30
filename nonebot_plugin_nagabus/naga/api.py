@@ -32,12 +32,17 @@ class NagaApi:
         self.cookies = Cookies(cookies)
 
         async def req_hook(request):
+            # 手动设置cookies
             self.cookies.set_cookie_header(request)
             logger.trace(f"Request: {request.method} {request.url} - Waiting for response")
 
         async def resp_hook(response):
             request = response.request
             logger.trace(f"Response: {request.method} {request.url} - Status {response.status_code}")
+
+            # 始终清除掉响应带的cookies
+            self.client.cookies = None
+
             response.raise_for_status()
 
         self.client: AsyncClient = AsyncClient(
@@ -60,6 +65,15 @@ class NagaApi:
         )
         return OrderReportList.parse_obj(resp.json())
 
+    async def _get_csrfmiddlewaretoken(self) -> str:
+        resp = await self.client.get(
+            "/order_form/"
+        )
+        mat = re.search(r"<input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"(.*)\">", resp.text)
+        if mat is None:
+            raise RuntimeError("cannot get csrfmiddlewaretoken")
+        return mat.group(1)
+
     async def analyze_tenhou(self, haihu_id: str, seat: int,
                              rule: NagaGameRule,
                              model_type: Union[Sequence[NagaHanchanModelType],
@@ -69,7 +83,7 @@ class NagaApi:
             "seat": seat,
             "reanalysis": 0,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": self.cookies["csrftoken"]
+            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken()
         }
 
         resp = await self.client.post(
@@ -97,7 +111,7 @@ class NagaApi:
             "seat": seat,
             "game_type": rule.value,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": self.cookies["csrftoken"]
+            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken()
         }
 
         await self.client.post(
