@@ -8,7 +8,7 @@ from nonebot_plugin_saa import MessageFactory
 def send_waiting_prompt():
     def decorator(func):
         @wraps(func)
-        async def wrapped_func(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             async def send_delayed_waiting_prompt(delay: float = 5.0):
                 try:
                     await asyncio.sleep(delay)
@@ -21,11 +21,11 @@ def send_waiting_prompt():
             task = asyncio.create_task(send_delayed_waiting_prompt())
 
             try:
-                await wrapped_func(*args, **kwargs)
+                await func(*args, **kwargs)
             finally:
                 if task and not task.done():
                     task.cancel()
 
-        return wrapped_func
+        return wrapper
 
     return decorator

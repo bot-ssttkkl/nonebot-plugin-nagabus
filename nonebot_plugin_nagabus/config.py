@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 from nonebot import get_driver
@@ -10,7 +10,10 @@ from .errors import ConfigError
 class Config(BaseSettings):
     naga_cookies: Dict[str, str]
     naga_fake_api: bool = False
-    naga_timeout: float = 60*10
+    naga_timeout: float = 60 * 10
+
+    access_control_reply_on_permission_denied: Optional[str]
+    access_control_reply_on_rate_limited: Optional[str]
 
     datastore_database_dialect: str
 

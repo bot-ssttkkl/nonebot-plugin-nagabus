@@ -5,17 +5,18 @@ from httpx import HTTPError
 from nonebot import logger
 from nonebot.exception import MatcherException, ActionFailed
 from nonebot.internal.matcher import current_matcher
-from nonebot_plugin_access_control.errors import RateLimitedError
+from nonebot_plugin_access_control.errors import RateLimitedError, PermissionDeniedError
 from nonebot_plugin_saa import MessageFactory
 
 from ..errors import BadRequestError
+from ...config import conf
 from ...naga.errors import OrderError, InvalidGameError, UnsupportedGameError
 
 
 def handle_error(silently: bool = False):
     def decorator(func):
         @wraps(func)
-        async def wrapped_func(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             matcher = current_matcher.get()
 
             try:
@@ -31,7 +32,13 @@ def handle_error(silently: bool = False):
                     await matcher.finish()
             except RateLimitedError as e:
                 if not silently:
-                    await MessageFactory("已达到使用次数上限").send(reply=True)
+                    if conf().access_control_reply_on_rate_limited:
+                        await MessageFactory(conf().access_control_reply_on_rate_limited).send(reply=True)
+                    await matcher.finish()
+            except PermissionDeniedError as e:
+                if not silently:
+                    if conf().access_control_reply_on_permission_denied:
+                        await MessageFactory(conf().access_control_reply_on_permission_denied).send(reply=True)
                     await matcher.finish()
             except OrderError as e:
                 logger.exception(e)
@@ -64,6 +71,6 @@ def handle_error(silently: bool = False):
                     await MessageFactory(f"内部错误：{type(e)}{str(e)}").send(reply=True)
                     await matcher.finish()
 
-        return wrapped_func
+        return wrapper
 
     return decorator
