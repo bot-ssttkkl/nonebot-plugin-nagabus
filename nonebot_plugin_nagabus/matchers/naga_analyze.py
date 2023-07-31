@@ -10,6 +10,7 @@ from nonebot_plugin_session import extract_session, Session
 
 from .errors import BadRequestError
 from .interceptors.handle_error import handle_error
+from .interceptors.send_waiting_prompt import send_waiting_prompt
 from ..ac import ac
 from ..naga import naga
 from ..naga.errors import InvalidKyokuHonbaError
@@ -65,6 +66,7 @@ kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789
 @naga_analyze_matcher.handle()
 @handle_error()
 @analyze_srv.patch_handler(retire_on_throw=True)
+@send_waiting_prompt()
 async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                        session: Session = Depends(extract_session)):
     args = cmd_args.extract_plain_text().split(' ')

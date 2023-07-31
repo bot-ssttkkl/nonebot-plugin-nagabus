@@ -10,6 +10,7 @@ from .errors import ConfigError
 class Config(BaseSettings):
     naga_cookies: Dict[str, str]
     naga_fake_api: bool = False
+    naga_timeout: float = 60*10
 
     datastore_database_dialect: str
 

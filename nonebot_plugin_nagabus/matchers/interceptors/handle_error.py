@@ -36,7 +36,7 @@ def handle_error(silently: bool = False):
             except OrderError as e:
                 logger.exception(e)
                 if not silently:
-                    await MessageFactory("不知道为什么总之解析错误，请在NAGA网页端检查是否已成功解析").send(reply=True)
+                    await MessageFactory(f"不知道为什么总之解析错误，请在NAGA网页端检查是否已成功解析（{str(e)}）").send(reply=True)
                     await matcher.finish()
             except InvalidGameError as e:
                 logger.warning(e)
@@ -56,7 +56,7 @@ def handle_error(silently: bool = False):
             except asyncio.TimeoutError as e:
                 logger.warning(e)
                 if not silently:
-                    await MessageFactory(f"查询超时").send(reply=True)
+                    await MessageFactory(f"查询超时，请在NAGA网页端检查是否已成功解析").send(reply=True)
                     await matcher.finish()
             except Exception as e:
                 logger.exception(e)
