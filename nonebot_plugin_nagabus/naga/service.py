@@ -4,8 +4,9 @@ import re
 from asyncio import Lock
 from datetime import datetime, timezone
 from inspect import isawaitable
-from typing import Dict, Union, Optional, List, Sequence
+from typing import Union, Optional, List, Sequence, Mapping
 
+from httpx import Cookies
 from monthdelta import monthdelta
 from nonebot import logger
 from nonebot_plugin_session import Session
@@ -22,6 +23,7 @@ from .utils import model_type_to_str
 from ..config import conf
 from ..data.naga import MajsoulOrderOrm, NagaOrderOrm, NagaOrderSource
 from ..data.session import get_session
+from ..datastore import plugin_data
 from ..mjs import get_majsoul_paipu
 from ..utils.tz import TZ_TOKYO
 
@@ -75,12 +77,14 @@ class ObservableOrderReport:
 class NagaService:
     _tenhou_haihu_id_reg = re.compile(r"^20\d{8}gm-[a-f\d]{4}-[a-z\d]{4,5}-[a-zA-Z\d]{8}$")
 
-    def __init__(self, cookies: Dict[str, str]):
+    def __init__(self):
+        self.cookies = Cookies()
+
         if conf().naga_fake_api:
             self.api = FakeNagaApi()
             logger.warning("using fake naga api")
         else:
-            self.api = NagaApi(cookies)
+            self.api = NagaApi(cookies_getter=lambda: self.cookies)
 
         self._majsoul_order_mutex = Lock()
         self._tenhou_order_mutex = Lock()
@@ -89,12 +93,17 @@ class NagaService:
 
         self._order_report = ObservableOrderReport(self.api)
 
+    async def start(self):
+        cookies_obj = await plugin_data.config.get("naga_cookies", {})
+        self.cookies = Cookies(cookies_obj)
+
     async def close(self):
         await self.api.close()
 
-    @property
-    def timeout(self) -> float:
-        return conf().naga_timeout
+    async def set_cookies(self, cookies: Mapping[str, str]):
+        await plugin_data.config.set("naga_cookies", cookies)
+        self.cookies = Cookies(dict(cookies))
+        logger.info(f"naga_cookies set to {'; '.join(map(lambda kv: f'{kv[0]}={kv[1]}', cookies.items()))}")
 
     async def _get_report(self, haihu_id: str) -> NagaReport:
         report = asyncio.get_running_loop().create_future()
@@ -118,8 +127,9 @@ class NagaService:
         self._order_report.observe_once(_make_callback())
 
         try:
-            if self.timeout > 0:
-                return await asyncio.wait_for(report, self.timeout)
+            timeout = conf().naga_timeout
+            if timeout > 0:
+                return await asyncio.wait_for(report, timeout)
             else:
                 return await report
         finally:

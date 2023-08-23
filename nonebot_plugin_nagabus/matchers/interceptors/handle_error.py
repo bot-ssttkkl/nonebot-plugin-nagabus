@@ -9,8 +9,9 @@ from nonebot_plugin_access_control.errors import RateLimitedError, PermissionDen
 from nonebot_plugin_saa import MessageFactory
 
 from ..errors import BadRequestError
+from ... import default_cmd_start
 from ...config import conf
-from ...naga.errors import OrderError, InvalidGameError, UnsupportedGameError
+from ...naga.errors import OrderError, InvalidGameError, UnsupportedGameError, InvalidTokenError
 
 
 def handle_error(silently: bool = False):
@@ -54,6 +55,11 @@ def handle_error(silently: bool = False):
                 logger.warning(e)
                 if not silently:
                     await MessageFactory("只支持四麻牌谱").send(reply=True)
+                    await matcher.finish()
+            except InvalidTokenError as e:
+                logger.warning(e)
+                if not silently:
+                    await MessageFactory(f"Token无效，请通过{default_cmd_start}naga-set-cookies指令设置Token").send(reply=True)
                     await matcher.finish()
             except HTTPError as e:
                 logger.exception(e)

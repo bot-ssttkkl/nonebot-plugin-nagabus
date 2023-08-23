@@ -1,8 +1,8 @@
 from nonebot import get_driver
 
 from .service import NagaService
-from ..config import conf
 
-naga = NagaService(conf().naga_cookies)
+naga = NagaService()
 
+get_driver().on_startup(naga.start)
 get_driver().on_shutdown(naga.close)

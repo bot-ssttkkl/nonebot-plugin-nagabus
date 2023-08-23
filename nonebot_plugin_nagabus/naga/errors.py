@@ -5,6 +5,10 @@ class NagaError(BaseException):
     ...
 
 
+class InvalidTokenError(NagaError):
+    ...
+
+
 class OrderError(NagaError):
     ...
 

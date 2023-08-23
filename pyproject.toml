@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-nagabus"
-version = "0.2.8"
+version = "0.2.9"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 readme = "README.md"
@@ -11,7 +11,7 @@ python = "^3.9"
 nonebot2 = {extras = ["httpx"], version = "^2.0.0"}
 nonebot-adapter-onebot = ">=2.2.3"
 nonebot-plugin-access-control = ">=0.5.1"
-nonebot-plugin-datastore = ">=0.6.3"
+nonebot-plugin-datastore = "^1.1.0"
 nonebot-plugin-get-nickname = ">=0.1.0"
 nonebot-plugin-majsoul = ">=0.2.2"
 nonebot-plugin-session = ">=0.0.3"
