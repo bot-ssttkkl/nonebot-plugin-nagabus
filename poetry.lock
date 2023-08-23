@@ -1342,20 +1342,21 @@ pydantic = ">=1.9.0,<2.0.0"
 
 [[package]]
 name = "nonebot-plugin-access-control"
-version = "0.5.1"
+version = "0.5.7.post1"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_access_control-0.5.1-py3-none-any.whl", hash = "sha256:d4be6b6182c4764e1e8a7d86264fa0e74e4f85b44de52471e9254409fb19843a"},
-    {file = "nonebot_plugin_access_control-0.5.1.tar.gz", hash = "sha256:aa41b793ff20c54f4c0ae87db50c20e39c2bf0912302f1531e90ea9c231502d1"},
+    {file = "nonebot_plugin_access_control-0.5.7.post1-py3-none-any.whl", hash = "sha256:2911023444b0b598f91bfd0871266300d65f5adbcb2c417f01b3259b1fd12782"},
+    {file = "nonebot_plugin_access_control-0.5.7.post1.tar.gz", hash = "sha256:c9f94ad5534e15207dbb72de31b6cb392d6ff6fff547731e4621f21a76f3c2a3"},
 ]
 
 [package.dependencies]
 nonebot-plugin-apscheduler = ">=0.2.0,<0.3.0"
-nonebot-plugin-datastore = ">=0.6.0a3,<0.7.0"
-nonebot2 = ">=2.0.0rc3,<3.0.0"
+nonebot-plugin-datastore = ">=1.0.0,<2.0.0"
+nonebot-plugin-session = ">=0.0.4"
+nonebot2 = ">=2.0.0,<3.0.0"
 shortuuid = ">=1.0.11,<2.0.0"
 
 [[package]]
@@ -1376,27 +1377,27 @@ nonebot2 = ">=2.0.0-rc.1,<3.0.0"
 
 [[package]]
 name = "nonebot-plugin-datastore"
-version = "0.6.3"
+version = "1.1.0"
 description = "适用于 Nonebot2 的数据存储插件"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot_plugin_datastore-0.6.3-py3-none-any.whl", hash = "sha256:2e917badad0618ea4dcf1b084eb5cd2d859ac2850e5fdabac6e862fded995360"},
-    {file = "nonebot_plugin_datastore-0.6.3.tar.gz", hash = "sha256:f6b2d703e09e29ce1d8f50a752f59738d7d61d31d43b37ec977a8d99d04b990c"},
+    {file = "nonebot_plugin_datastore-1.1.0-py3-none-any.whl", hash = "sha256:8ca11b6da0f1ff09cf0effe9f1baf3475874ec1c7c8ffe0053bb21524112c95e"},
+    {file = "nonebot_plugin_datastore-1.1.0.tar.gz", hash = "sha256:1e7fdba17fba3986467a98e1938d3e2ad65767d548146a31b7ded340d050a22c"},
 ]
 
 [package.dependencies]
 alembic = ">=1.9.1,<2.0.0"
-nonebot-plugin-localstore = ">=0.2.0,<0.3.0 || >0.3.0,<0.4.0 || >0.4.0,<0.5.0"
-nonebot2 = {version = ">=2.0.0-rc.1,<3.0.0", extras = ["httpx"]}
+nonebot-plugin-localstore = ">=0.2.0,<0.3.0 || >0.3.0,<0.4.0 || >0.4.0"
+nonebot2 = {version = ">=2.0.0,<3.0.0", extras = ["httpx"]}
 sqlalchemy = {version = ">=2.0.0,<3.0.0", extras = ["aiosqlite"]}
 
 [package.extras]
-all = ["anyio (>=3.6)", "click (>=8.0)", "pyyaml (>=6.0,<7.0)", "rtoml (>=0.9.0,<0.10.0)", "typing-extensions (>=4.4)"]
+all = ["anyio (>=3.6)", "click (>=8.0)", "pyyaml (>=6.0)", "rtoml (>=0.9.0)", "typing-extensions (>=4.4)"]
 cli = ["anyio (>=3.6)", "click (>=8.0)", "typing-extensions (>=4.4)"]
-toml = ["rtoml (>=0.9.0,<0.10.0)"]
-yaml = ["pyyaml (>=6.0,<7.0)"]
+toml = ["rtoml (>=0.9.0)"]
+yaml = ["pyyaml (>=6.0)"]
 
 [[package]]
 name = "nonebot-plugin-escape-url"
@@ -1464,27 +1465,26 @@ typing-extensions = ">=4.0.0"
 
 [[package]]
 name = "nonebot-plugin-majsoul"
-version = "0.2.0.post4"
-description = ""
+version = "0.2.2"
+description = "NoneBot2 雀魂信息查询插件"
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_majsoul-0.2.0.post4-py3-none-any.whl", hash = "sha256:b0bc1d1278070677ddc5ae1bb1b974ccbe82c29e8d991c983b884d174d22e43e"},
-    {file = "nonebot_plugin_majsoul-0.2.0.post4.tar.gz", hash = "sha256:7499d581d70315a7403625037f20b0d22c95aa482059d5df8f0b2655893f6dfb"},
+    {file = "nonebot_plugin_majsoul-0.2.2-py3-none-any.whl", hash = "sha256:cb1d44e54f8b0e503482094e6e0d87bdaae993738684d8b27a8aeeafc0c31956"},
+    {file = "nonebot_plugin_majsoul-0.2.2.tar.gz", hash = "sha256:ceb3418e5c8ccd052dd731a278a22b8e36d9f08f578eae2c481df372233bfaf5"},
 ]
 
 [package.dependencies]
-icmplib = ">=3.0.3,<4.0.0"
-matplotlib = ">=3.6.2,<4.0.0"
-monthdelta = ">=0.9.1,<0.10.0"
-nonebot-adapter-onebot = ">=2.2.3,<3.0.0"
+icmplib = ">=3.0.3"
+matplotlib = ">=3.6.2"
+monthdelta = ">=0.9.1"
+nonebot-adapter-onebot = ">=2.2.3"
 nonebot-plugin-gocqhttp-cross-machine-upload-file = ">=0.1.4"
 nonebot-plugin-send-anything-anywhere = ">=0.2.1"
 nonebot2 = {version = ">=2.0.0,<3.0.0", extras = ["httpx"]}
-tensoul = ">=0.1.0,<0.2.0"
-typing-extensions = ">=4.4.0,<5.0.0"
-tzlocal = ">=4.2,<5.0"
+tensoul = ">=0.1.0"
+tzlocal = ">=4.2"
 
 [[package]]
 name = "nonebot-plugin-send-anything-anywhere"
@@ -2446,4 +2446,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "f4b440502a89b9c85f4793e0556f081107b7c4adeebba49992e108c9c804432d"
+content-hash = "5d0e30b7836591f1f85e127691def049ea5c47e0b7fa9aad00cc886d45d265ff"

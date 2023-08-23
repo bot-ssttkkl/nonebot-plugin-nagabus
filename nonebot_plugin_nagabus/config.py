@@ -1,14 +1,11 @@
-from typing import Dict, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 from nonebot import get_driver
-from pydantic import BaseSettings, root_validator, ValidationError
-
-from .errors import ConfigError
+from pydantic import BaseSettings, root_validator
 
 
 class Config(BaseSettings):
-    naga_cookies: Dict[str, str]
     naga_fake_api: bool = False
     naga_timeout: float = 60 * 10
 
@@ -42,13 +39,5 @@ _conf = None
 def conf() -> Config:
     global _conf
     if _conf is None:
-        try:
-            _conf = Config(**get_driver().config.dict())
-        except ValidationError as e:
-            for err in e.errors():
-                if err["loc"] == ("naga_cookies",) and err["type"] == "value_error.missing":
-                    raise ConfigError("Please configure naga_cookies in your .env file!") from e
-            else:
-                raise e
-
+        _conf = Config(**get_driver().config.dict())
     return _conf

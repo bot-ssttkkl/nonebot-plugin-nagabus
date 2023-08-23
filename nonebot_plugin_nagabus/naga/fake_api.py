@@ -2,7 +2,7 @@ import asyncio
 import random
 from asyncio import create_task
 from datetime import datetime
-from typing import Union, Sequence
+from typing import Union, Sequence, Mapping
 from uuid import uuid4
 
 from nonebot import logger
@@ -20,8 +20,14 @@ class FakeNagaApi:
         self.order = []
         self.rest_np = 1500
 
+    async def start(self):
+        ...
+
     async def close(self):
         ...
+
+    async def set_cookies(self, cookies: Mapping[str, str]):
+        logger.info(f"naga_cookies set to {'; '.join(map(lambda kv: f'{kv[0]}={kv[1]}', cookies))}")
 
     async def order_report_list(self, year: int, month: int) -> OrderReportList:
         return OrderReportList(report=self.report, order=self.order)

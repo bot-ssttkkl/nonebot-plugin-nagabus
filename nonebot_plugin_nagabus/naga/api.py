@@ -1,11 +1,12 @@
 import json
 import re
-from typing import Dict, List, Union, Sequence
+from typing import List, Union, Sequence, Callable
 
 from httpx import AsyncClient, Cookies
 from nonebot import logger
 from pydantic import BaseModel
 
+from .errors import InvalidTokenError
 from .model import NagaReport, NagaOrder, NagaHanchanModelType, NagaTonpuuModelType, NagaGameRule
 from .utils import model_type_to_str
 
@@ -28,8 +29,8 @@ class NagaApi:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35",
     }
 
-    def __init__(self, cookies: Dict[str, str]):
-        self.cookies = Cookies(cookies)
+    def __init__(self, cookies_getter: Callable[[], Cookies]):
+        self.cookies_getter = cookies_getter
 
         async def req_hook(request):
             # 手动设置cookies
@@ -43,7 +44,11 @@ class NagaApi:
             # 始终清除掉响应带的cookies
             self.client.cookies = None
 
-            response.raise_for_status()
+            if response.status_code == 302:
+                # 给定token无效时，响应状态码总为302
+                raise InvalidTokenError()
+            else:
+                response.raise_for_status()
 
         self.client: AsyncClient = AsyncClient(
             base_url=self._BASE_URL,
@@ -51,6 +56,10 @@ class NagaApi:
             follow_redirects=True,
             event_hooks={'request': [req_hook], 'response': [resp_hook]},
         )
+
+    @property
+    def cookies(self) -> Cookies:
+        return self.cookies_getter()
 
     async def close(self):
         await self.client.aclose()
