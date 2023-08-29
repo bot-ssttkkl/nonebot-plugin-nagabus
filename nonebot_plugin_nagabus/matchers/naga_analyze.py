@@ -5,17 +5,18 @@ from nonebot import on_command
 from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import Depends
 from nonebot.params import CommandArg
+from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
 from nonebot_plugin_saa import MessageFactory
 from nonebot_plugin_session import extract_session, Session
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError
+from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
+from ssttkkl_nonebot_utils.nonebot import default_command_start
 
-from .errors import BadRequestError
-from .interceptors.handle_error import handle_error
-from .interceptors.send_waiting_prompt import send_waiting_prompt
+from .errors import error_handlers
 from ..ac import ac
 from ..naga import naga
 from ..naga.errors import InvalidKyokuHonbaError
-from ..utils.integer import decode_integer
-from ..utils.nonebot import default_cmd_start
 
 analyze_srv = ac.create_subservice("analyze")
 
@@ -64,9 +65,9 @@ kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789
 
 
 @naga_analyze_matcher.handle()
-@handle_error()
+@handle_error(error_handlers)
 @analyze_srv.patch_handler(retire_on_throw=True)
-@send_waiting_prompt()
+@with_handling_reaction()
 async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                        session: Session = Depends(extract_session)):
     args = cmd_args.extract_plain_text().split(' ')
@@ -113,6 +114,6 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
     else:
         await MessageFactory(
             "用法：\n"
-            f"{default_cmd_start}naga <雀魂牌谱链接> <东/南x局x本场>：消耗10NP解析雀魂小局\n"
-            f"{default_cmd_start}naga <天凤牌谱链接>：消耗50NP解析天凤半庄"
+            f"{default_command_start}naga <雀魂牌谱链接> <东/南x局x本场>：消耗10NP解析雀魂小局\n"
+            f"{default_command_start}naga <天凤牌谱链接>：消耗50NP解析天凤半庄"
         ).send(reply=True)
