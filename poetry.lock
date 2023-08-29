@@ -2005,17 +2005,19 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "ssttkkl-nonebot-utils"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 category = "main"
 optional = false
-python-versions = "*"
-files = []
-develop = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "ssttkkl_nonebot_utils-0.1.2-py3-none-any.whl", hash = "sha256:915942ee5593758f56267d5811dbc9edad705a75af2e198c05916aa418998891"},
+    {file = "ssttkkl_nonebot_utils-0.1.2.tar.gz", hash = "sha256:c61d4a17d4e27b9fc9659d1f80a92288348a2e19646d217a61de3762b2f58bb3"},
+]
 
-[package.source]
-type = "directory"
-url = "../ssttkkl-nonebot-utils"
+[package.dependencies]
+nonebot-plugin-session = ">=0.1.0"
+nonebot2 = ">=2.0.0,<3.0.0"
 
 [[package]]
 name = "starlette"
