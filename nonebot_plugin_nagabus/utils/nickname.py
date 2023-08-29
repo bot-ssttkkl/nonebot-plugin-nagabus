@@ -8,7 +8,7 @@ async def get_nickname(bot: Bot, session: Session):
 
     if session.bot_type == bot.type:
         try:
-            nickname = await platform_func(bot.type).get_user_nickname(session, bot)
+            nickname = await platform_func(bot.type).get_user_nickname(session)
         except BaseException as e:
             logger.opt(exception=e).error("获取用户昵称失败")
 
