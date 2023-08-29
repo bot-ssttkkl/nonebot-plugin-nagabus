@@ -9,6 +9,7 @@ from nonebot_plugin_saa import MessageFactory
 from nonebot_plugin_session.model import SessionModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 
 from .errors import error_handlers
 from ..ac import ac
@@ -40,12 +41,13 @@ async def naga_statistic(bot: Bot, year: int, month: int, statistic: List[NagaSe
             await MessageFactory(msg).send(reply=True)
 
 
-naga_statistic_this_month_matcher = on_command("naga本月使用情况", priority=5, block=True)
+naga_statistic_this_month_matcher = on_command("naga本月使用情况", aliases={"naga-statistic"}, priority=5, block=True)
 statistic_srv.patch_matcher(naga_statistic_this_month_matcher)
 
 
 @naga_statistic_this_month_matcher.handle()
 @handle_error(error_handlers)
+@with_handling_reaction()
 async def naga_statistic_this_month(bot: Bot):
     cur = datetime.now(tz=TZ_TOKYO)
     statistic = await naga.statistic(cur.year, cur.month)
@@ -59,6 +61,7 @@ statistic_srv.patch_matcher(naga_statistic_prev_month_matcher)
 
 @naga_statistic_prev_month_matcher.handle()
 @handle_error(error_handlers)
+@with_handling_reaction()
 async def naga_statistic_prev_month(bot: Bot):
     prev_month = datetime.now(tz=TZ_TOKYO) - monthdelta(months=1)
     statistic = await naga.statistic(prev_month.year, prev_month.month)
