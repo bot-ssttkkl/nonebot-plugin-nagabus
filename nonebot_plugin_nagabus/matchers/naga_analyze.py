@@ -5,10 +5,10 @@ from nonebot import on_command
 from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import Depends
 from nonebot.params import CommandArg
-from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
 from nonebot_plugin_saa import MessageFactory
 from nonebot_plugin_session import extract_session, Session
 from ssttkkl_nonebot_utils.errors.errors import BadRequestError
+from ssttkkl_nonebot_utils.integer import decode_integer
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 from ssttkkl_nonebot_utils.nonebot import default_command_start
