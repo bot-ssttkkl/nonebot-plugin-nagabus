@@ -6,18 +6,22 @@ nonebot-plugin-nagabus
 @GitHub         : https://github.com/bot-ssttkkl/nonebot-plugin-nagabus
 """
 
-from nonebot import require, logger
-from nonebot.plugin import PluginMetadata
-from ssttkkl_nonebot_utils.nonebot import default_command_start
-
-from .config import Config
-from .errors import ConfigError
+from nonebot import require
 
 require("nonebot_plugin_access_control")
 require("nonebot_plugin_datastore")
 require("nonebot_plugin_majsoul")
 require("nonebot_plugin_saa")
 require("nonebot_plugin_session")
+require("ssttkkl_nonebot_utils")
+
+from nonebot import logger
+from nonebot.plugin import PluginMetadata
+
+from .config import Config
+from .errors import ConfigError
+
+from ssttkkl_nonebot_utils.nonebot import default_command_start
 
 __usage__ = f"""
 牌谱分析：
