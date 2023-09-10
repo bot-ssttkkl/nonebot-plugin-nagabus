@@ -10,6 +10,7 @@ from nonebot_plugin_session import extract_session, Session
 from ssttkkl_nonebot_utils.errors.errors import BadRequestError
 from ssttkkl_nonebot_utils.integer import decode_integer
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_graceful_shutdown import with_graceful_shutdown
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 
@@ -65,6 +66,7 @@ kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789
 
 
 @naga_analyze_matcher.handle()
+@with_graceful_shutdown()
 @handle_error(error_handlers)
 @analyze_srv.patch_handler(retire_on_throw=True)
 @with_handling_reaction()

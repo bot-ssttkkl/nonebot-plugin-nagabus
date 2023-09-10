@@ -142,14 +142,14 @@ docs = ["sphinx (==6.1.3)", "sphinx-mdinclude (==0.5.3)"]
 
 [[package]]
 name = "alembic"
-version = "1.11.3"
+version = "1.12.0"
 description = "A database migration tool for SQLAlchemy."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "alembic-1.11.3-py3-none-any.whl", hash = "sha256:d6c96c2482740592777c400550a523bc7a9aada4e210cae2e733354ddae6f6f8"},
-    {file = "alembic-1.11.3.tar.gz", hash = "sha256:3db4ce81a9072e1b5aa44c2d202add24553182672a12daf21608d6f62a8f9cf9"},
+    {file = "alembic-1.12.0-py3-none-any.whl", hash = "sha256:03226222f1cf943deee6c85d9464261a6c710cd19b4fe867a3ad1f25afda610f"},
+    {file = "alembic-1.12.0.tar.gz", hash = "sha256:8e7645c32e4f200675e69f0745415335eb59a3663f5feb487abfa0b30c45888b"},
 ]
 
 [package.dependencies]
@@ -241,18 +241,6 @@ dev = ["attrs[docs,tests]", "pre-commit"]
 docs = ["furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier", "zope-interface"]
 tests = ["attrs[tests-no-zope]", "zope-interface"]
 tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-
-[[package]]
-name = "cachetools"
-version = "5.3.1"
-description = "Extensible memoizing collections and decorators"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "cachetools-5.3.1-py3-none-any.whl", hash = "sha256:95ef631eeaea14ba2e36f06437f36463aac3a096799e876ee55e5cdccb102590"},
-    {file = "cachetools-5.3.1.tar.gz", hash = "sha256:dce83f2d9b4e1f732a8cd44af8e8fab2dbe46201467fc98b3ef8f269092bf62b"},
-]
 
 [[package]]
 name = "certifi"
@@ -466,17 +454,18 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastapi"
-version = "0.103.0"
+version = "0.103.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fastapi-0.103.0-py3-none-any.whl", hash = "sha256:61ab72c6c281205dd0cbaccf503e829a37e0be108d965ac223779a8479243665"},
-    {file = "fastapi-0.103.0.tar.gz", hash = "sha256:4166732f5ddf61c33e9fa4664f73780872511e0598d4d5434b1816dc1e6d9421"},
+    {file = "fastapi-0.103.1-py3-none-any.whl", hash = "sha256:5e5f17e826dbd9e9b5a5145976c5cd90bcaa61f2bf9a69aca423f2bcebe44d83"},
+    {file = "fastapi-0.103.1.tar.gz", hash = "sha256:345844e6a82062f06a096684196aaf96c1198b25c06b72c1311b882aa2d8a35d"},
 ]
 
 [package.dependencies]
+anyio = ">=3.7.1,<4.0.0"
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
 starlette = ">=0.27.0,<0.28.0"
 typing-extensions = ">=4.5.0"
@@ -993,14 +982,14 @@ files = [
 
 [[package]]
 name = "loguru"
-version = "0.7.0"
+version = "0.7.1"
 description = "Python logging made (stupidly) simple"
 category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "loguru-0.7.0-py3-none-any.whl", hash = "sha256:b93aa30099fa6860d4727f1b81f8718e965bb96253fa190fab2077aaad6d15d3"},
-    {file = "loguru-0.7.0.tar.gz", hash = "sha256:1612053ced6ae84d7959dd7d5e431a0532642237ec21f7fd83ac73fe539e03e1"},
+    {file = "loguru-0.7.1-py3-none-any.whl", hash = "sha256:046bf970cb3cad77a28d607cbf042ac25a407db987a1e801c7f7e692469982f9"},
+    {file = "loguru-0.7.1.tar.gz", hash = "sha256:7ba2a7d81b79a412b0ded69bd921e012335e80fd39937a633570f273a343579e"},
 ]
 
 [package.dependencies]
@@ -1008,7 +997,7 @@ colorama = {version = ">=0.3.4", markers = "sys_platform == \"win32\""}
 win32-setctime = {version = ">=1.0.0", markers = "sys_platform == \"win32\""}
 
 [package.extras]
-dev = ["Sphinx (==5.3.0)", "colorama (==0.4.5)", "colorama (==0.4.6)", "freezegun (==1.1.0)", "freezegun (==1.2.2)", "mypy (==v0.910)", "mypy (==v0.971)", "mypy (==v0.990)", "pre-commit (==3.2.1)", "pytest (==6.1.2)", "pytest (==7.2.1)", "pytest-cov (==2.12.1)", "pytest-cov (==4.0.0)", "pytest-mypy-plugins (==1.10.1)", "pytest-mypy-plugins (==1.9.3)", "sphinx-autobuild (==2021.3.14)", "sphinx-rtd-theme (==1.2.0)", "tox (==3.27.1)", "tox (==4.4.6)"]
+dev = ["Sphinx (==7.2.5)", "colorama (==0.4.5)", "colorama (==0.4.6)", "freezegun (==1.1.0)", "freezegun (==1.2.2)", "mypy (==v0.910)", "mypy (==v0.971)", "mypy (==v1.4.1)", "pre-commit (==3.3.1)", "pytest (==6.1.2)", "pytest (==7.4.0)", "pytest-cov (==2.12.1)", "pytest-cov (==4.1.0)", "pytest-mypy-plugins (==1.9.3)", "pytest-mypy-plugins (==3.0.0)", "sphinx-autobuild (==2021.3.14)", "sphinx-rtd-theme (==1.3.0)", "tox (==3.27.1)", "tox (==4.11.0)"]
 
 [[package]]
 name = "mako"
@@ -1357,14 +1346,14 @@ typing-extensions = ">=4.0.0,<5.0.0"
 
 [[package]]
 name = "nonebot-adapter-qqguild"
-version = "0.2.4"
+version = "0.2.5"
 description = "QQ Guild adapter for nonebot2"
 category = "dev"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot_adapter_qqguild-0.2.4-py3-none-any.whl", hash = "sha256:607f764e5cc30ecead025751f9b8b4d7b4a194f5e399cb0478dc93c6aeec5a4f"},
-    {file = "nonebot_adapter_qqguild-0.2.4.tar.gz", hash = "sha256:25688197947da73fbf7706fa88398b69e7144c765c30f38747a0b6275851807e"},
+    {file = "nonebot_adapter_qqguild-0.2.5-py3-none-any.whl", hash = "sha256:9fa3e1a86d5ba6bb49bd8f6b1766e0d70204a97026316c4f6426bc09abb8e9fb"},
+    {file = "nonebot_adapter_qqguild-0.2.5.tar.gz", hash = "sha256:b6fef5daf54a4ce41221945a6fb3c5c63763a9950377f1e3e50191602b8b8098"},
 ]
 
 [package.dependencies]
@@ -1408,14 +1397,14 @@ nonebot2 = ">=2.0.0,<3.0.0"
 
 [[package]]
 name = "nonebot-plugin-datastore"
-version = "1.1.0"
+version = "1.1.1"
 description = "适用于 Nonebot2 的数据存储插件"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot_plugin_datastore-1.1.0-py3-none-any.whl", hash = "sha256:8ca11b6da0f1ff09cf0effe9f1baf3475874ec1c7c8ffe0053bb21524112c95e"},
-    {file = "nonebot_plugin_datastore-1.1.0.tar.gz", hash = "sha256:1e7fdba17fba3986467a98e1938d3e2ad65767d548146a31b7ded340d050a22c"},
+    {file = "nonebot_plugin_datastore-1.1.1-py3-none-any.whl", hash = "sha256:7ae06b5a50651c29426775b6f300f229a18c4f09aaecb7f2104f321369524e16"},
+    {file = "nonebot_plugin_datastore-1.1.1.tar.gz", hash = "sha256:f5b675646a0b17850911ee746d973f86e1a6afb4eb5d124cdb55adbf12404ac2"},
 ]
 
 [package.dependencies]
@@ -1446,32 +1435,15 @@ files = [
 nonebot2 = ">=2.0.0,<3.0.0"
 
 [[package]]
-name = "nonebot-plugin-gocqhttp-cross-machine-upload-file"
-version = "0.1.5"
-description = ""
-category = "main"
-optional = false
-python-versions = ">=3.9,<4.0"
-files = [
-    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.5-py3-none-any.whl", hash = "sha256:ce84fe33e70871875ea0dc70922f6b05cdbb741372581e855eebf1ae0554b636"},
-    {file = "nonebot_plugin_gocqhttp_cross_machine_upload_file-0.1.5.tar.gz", hash = "sha256:1d0b3551748d47e75dc00ff2ef3851acd158655cfcd599731898857aa205d576"},
-]
-
-[package.dependencies]
-cachetools = ">=5.2.0,<6.0.0"
-nonebot-adapter-onebot = ">=2.2.2,<3.0.0"
-nonebot2 = {version = ">=2.0.0rc4,<3.0.0", extras = ["fastapi"]}
-
-[[package]]
 name = "nonebot-plugin-localstore"
-version = "0.5.0"
+version = "0.5.1"
 description = "Local Storage Support for NoneBot2"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot_plugin_localstore-0.5.0-py3-none-any.whl", hash = "sha256:31ada7d363bdc9326e14f054d02f2c8cee58ec7a970e534ac2793d75b818cf95"},
-    {file = "nonebot_plugin_localstore-0.5.0.tar.gz", hash = "sha256:0099d99c427b13c52b6a23588b954dc8651c0b0b556d743f36aa2dd246576611"},
+    {file = "nonebot_plugin_localstore-0.5.1-py3-none-any.whl", hash = "sha256:520c4dd42f00495ec8fc458c40c5877bc604556f58147c34c4051860df34575b"},
+    {file = "nonebot_plugin_localstore-0.5.1.tar.gz", hash = "sha256:97491d213d419de3f76f941a8d80ab190aa9828950289ec83402028e0f0892eb"},
 ]
 
 [package.dependencies]
@@ -1480,24 +1452,23 @@ typing-extensions = ">=4.0.0"
 
 [[package]]
 name = "nonebot-plugin-majsoul"
-version = "0.2.2"
+version = "0.2.3"
 description = "NoneBot2 雀魂信息查询插件"
 category = "main"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "nonebot_plugin_majsoul-0.2.2-py3-none-any.whl", hash = "sha256:cb1d44e54f8b0e503482094e6e0d87bdaae993738684d8b27a8aeeafc0c31956"},
-    {file = "nonebot_plugin_majsoul-0.2.2.tar.gz", hash = "sha256:ceb3418e5c8ccd052dd731a278a22b8e36d9f08f578eae2c481df372233bfaf5"},
+    {file = "nonebot_plugin_majsoul-0.2.3-py3-none-any.whl", hash = "sha256:c2d1e3c9f62f536ffd20bf02a5c76a5b62dff1c89949aa74b8eef83f19a7eba0"},
+    {file = "nonebot_plugin_majsoul-0.2.3.tar.gz", hash = "sha256:c9e761c80f2011f6dd22f8e8c2403d1ca64af7e8c38e495885e88d39aee82fd2"},
 ]
 
 [package.dependencies]
 icmplib = ">=3.0.3"
 matplotlib = ">=3.6.2"
 monthdelta = ">=0.9.1"
-nonebot-adapter-onebot = ">=2.2.3"
-nonebot-plugin-gocqhttp-cross-machine-upload-file = ">=0.1.4"
 nonebot-plugin-send-anything-anywhere = ">=0.2.1"
 nonebot2 = {version = ">=2.0.0,<3.0.0", extras = ["httpx"]}
+ssttkkl-nonebot-utils = ">=0.1.5"
 tensoul = ">=0.1.0"
 tzlocal = ">=4.2"
 
@@ -1542,14 +1513,14 @@ saa = ["nonebot-plugin-send-anything-anywhere (>=0.3.0,<0.4.0)"]
 
 [[package]]
 name = "nonebot2"
-version = "2.0.1"
+version = "2.1.0"
 description = "An asynchronous python bot framework."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot2-2.0.1-py3-none-any.whl", hash = "sha256:58111068df7a6c13cca2a412dd0f6f88d7bf2a2af3e92ae770fd913a9421743e"},
-    {file = "nonebot2-2.0.1.tar.gz", hash = "sha256:c61294644aef08f2b427301ca1c358d34e6cfaa7025d694a502ad66e9508e7c2"},
+    {file = "nonebot2-2.1.0-py3-none-any.whl", hash = "sha256:e14bfbb962df72a9beac5035291594ad6e549c004b2ff5d28db97d0fdc3abf45"},
+    {file = "nonebot2-2.1.0.tar.gz", hash = "sha256:f29cb773833ab5000557090edcbc5a6eabaf6e04a224c86761a4ddb6b1e0bd18"},
 ]
 
 [package.dependencies]
@@ -1559,7 +1530,7 @@ loguru = ">=0.6.0,<1.0.0"
 pydantic = {version = ">=1.10.0,<2.0.0", extras = ["dotenv"]}
 pygtrie = ">=2.4.1,<3.0.0"
 tomli = {version = ">=2.0.1,<3.0.0", markers = "python_version < \"3.11\""}
-typing-extensions = ">=4.0.0,<5.0.0"
+typing-extensions = ">=4.4.0,<5.0.0"
 uvicorn = {version = ">=0.20.0,<1.0.0", extras = ["standard"], optional = true, markers = "extra == \"quart\" or extra == \"fastapi\" or extra == \"all\""}
 yarl = ">=1.7.2,<2.0.0"
 
@@ -1690,25 +1661,25 @@ tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "pa
 
 [[package]]
 name = "protobuf"
-version = "4.24.2"
+version = "4.24.3"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "protobuf-4.24.2-cp310-abi3-win32.whl", hash = "sha256:58e12d2c1aa428ece2281cef09bbaa6938b083bcda606db3da4e02e991a0d924"},
-    {file = "protobuf-4.24.2-cp310-abi3-win_amd64.whl", hash = "sha256:77700b55ba41144fc64828e02afb41901b42497b8217b558e4a001f18a85f2e3"},
-    {file = "protobuf-4.24.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:237b9a50bd3b7307d0d834c1b0eb1a6cd47d3f4c2da840802cd03ea288ae8880"},
-    {file = "protobuf-4.24.2-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:25ae91d21e3ce8d874211110c2f7edd6384816fb44e06b2867afe35139e1fd1c"},
-    {file = "protobuf-4.24.2-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:c00c3c7eb9ad3833806e21e86dca448f46035242a680f81c3fe068ff65e79c74"},
-    {file = "protobuf-4.24.2-cp37-cp37m-win32.whl", hash = "sha256:4e69965e7e54de4db989289a9b971a099e626f6167a9351e9d112221fc691bc1"},
-    {file = "protobuf-4.24.2-cp37-cp37m-win_amd64.whl", hash = "sha256:c5cdd486af081bf752225b26809d2d0a85e575b80a84cde5172a05bbb1990099"},
-    {file = "protobuf-4.24.2-cp38-cp38-win32.whl", hash = "sha256:6bd26c1fa9038b26c5c044ee77e0ecb18463e957fefbaeb81a3feb419313a54e"},
-    {file = "protobuf-4.24.2-cp38-cp38-win_amd64.whl", hash = "sha256:bb7aa97c252279da65584af0456f802bd4b2de429eb945bbc9b3d61a42a8cd16"},
-    {file = "protobuf-4.24.2-cp39-cp39-win32.whl", hash = "sha256:2b23bd6e06445699b12f525f3e92a916f2dcf45ffba441026357dea7fa46f42b"},
-    {file = "protobuf-4.24.2-cp39-cp39-win_amd64.whl", hash = "sha256:839952e759fc40b5d46be319a265cf94920174d88de31657d5622b5d8d6be5cd"},
-    {file = "protobuf-4.24.2-py3-none-any.whl", hash = "sha256:3b7b170d3491ceed33f723bbf2d5a260f8a4e23843799a3906f16ef736ef251e"},
-    {file = "protobuf-4.24.2.tar.gz", hash = "sha256:7fda70797ddec31ddfa3576cbdcc3ddbb6b3078b737a1a87ab9136af0570cd6e"},
+    {file = "protobuf-4.24.3-cp310-abi3-win32.whl", hash = "sha256:20651f11b6adc70c0f29efbe8f4a94a74caf61b6200472a9aea6e19898f9fcf4"},
+    {file = "protobuf-4.24.3-cp310-abi3-win_amd64.whl", hash = "sha256:3d42e9e4796a811478c783ef63dc85b5a104b44aaaca85d4864d5b886e4b05e3"},
+    {file = "protobuf-4.24.3-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:6e514e8af0045be2b56e56ae1bb14f43ce7ffa0f68b1c793670ccbe2c4fc7d2b"},
+    {file = "protobuf-4.24.3-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:ba53c2f04798a326774f0e53b9c759eaef4f6a568ea7072ec6629851c8435959"},
+    {file = "protobuf-4.24.3-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:f6ccbcf027761a2978c1406070c3788f6de4a4b2cc20800cc03d52df716ad675"},
+    {file = "protobuf-4.24.3-cp37-cp37m-win32.whl", hash = "sha256:1b182c7181a2891e8f7f3a1b5242e4ec54d1f42582485a896e4de81aa17540c2"},
+    {file = "protobuf-4.24.3-cp37-cp37m-win_amd64.whl", hash = "sha256:b0271a701e6782880d65a308ba42bc43874dabd1a0a0f41f72d2dac3b57f8e76"},
+    {file = "protobuf-4.24.3-cp38-cp38-win32.whl", hash = "sha256:e29d79c913f17a60cf17c626f1041e5288e9885c8579832580209de8b75f2a52"},
+    {file = "protobuf-4.24.3-cp38-cp38-win_amd64.whl", hash = "sha256:067f750169bc644da2e1ef18c785e85071b7c296f14ac53e0900e605da588719"},
+    {file = "protobuf-4.24.3-cp39-cp39-win32.whl", hash = "sha256:2da777d34b4f4f7613cdf85c70eb9a90b1fbef9d36ae4a0ccfe014b0b07906f1"},
+    {file = "protobuf-4.24.3-cp39-cp39-win_amd64.whl", hash = "sha256:f631bb982c5478e0c1c70eab383af74a84be66945ebf5dd6b06fc90079668d0b"},
+    {file = "protobuf-4.24.3-py3-none-any.whl", hash = "sha256:f6f8dc65625dadaad0c8545319c2e2f0424fede988368893ca3844261342c11a"},
+    {file = "protobuf-4.24.3.tar.gz", hash = "sha256:12e9ad2ec079b833176d2921be2cb24281fa591f0b119b208b788adc48c2561d"},
 ]
 
 [[package]]
@@ -1824,14 +1795,14 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "pytz"
-version = "2023.3"
+version = "2023.3.post1"
 description = "World timezone definitions, modern and historical"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pytz-2023.3-py2.py3-none-any.whl", hash = "sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb"},
-    {file = "pytz-2023.3.tar.gz", hash = "sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588"},
+    {file = "pytz-2023.3.post1-py2.py3-none-any.whl", hash = "sha256:ce42d816b81b68506614c11e8937d3aa9e41007ceb50bfdcb0749b921bf646c7"},
+    {file = "pytz-2023.3.post1.tar.gz", hash = "sha256:7b4fddbeb94a1eba4b557da24f19fdf9db575192544270a9101d8509f9f43d7b"},
 ]
 
 [[package]]
@@ -1883,6 +1854,23 @@ files = [
     {file = "PyYAML-6.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:510c9deebc5c0225e8c96813043e62b680ba2f9c50a08d3724c7f28a747d1486"},
     {file = "PyYAML-6.0.1.tar.gz", hash = "sha256:bfdf460b1736c775f2ba9f6a92bca30bc2095067b8a9d77876d1fad6cc3b4a43"},
 ]
+
+[[package]]
+name = "setuptools"
+version = "68.2.0"
+description = "Easily download, build, install, upgrade, and uninstall Python packages"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "setuptools-68.2.0-py3-none-any.whl", hash = "sha256:af3d5949030c3f493f550876b2fd1dd5ec66689c4ee5d5344f009746f71fd5a8"},
+    {file = "setuptools-68.2.0.tar.gz", hash = "sha256:00478ca80aeebeecb2f288d3206b0de568df5cd2b8fada1209843cc9a8d88a48"},
+]
+
+[package.extras]
+docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-hoverxref (<2)", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
+testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8-2020", "ini2toml[lite] (>=0.9)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pip (>=19.1)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy (>=0.9.1)", "pytest-perf", "pytest-ruff", "pytest-timeout", "pytest-xdist", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
+testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "packaging", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
 name = "shortuuid"
@@ -2005,19 +1993,17 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "ssttkkl-nonebot-utils"
-version = "0.1.2"
+version = "0.1.15"
 description = ""
 category = "main"
 optional = false
-python-versions = ">=3.9,<4.0"
-files = [
-    {file = "ssttkkl_nonebot_utils-0.1.2-py3-none-any.whl", hash = "sha256:915942ee5593758f56267d5811dbc9edad705a75af2e198c05916aa418998891"},
-    {file = "ssttkkl_nonebot_utils-0.1.2.tar.gz", hash = "sha256:c61d4a17d4e27b9fc9659d1f80a92288348a2e19646d217a61de3762b2f58bb3"},
-]
+python-versions = "*"
+files = []
+develop = false
 
-[package.dependencies]
-nonebot-plugin-session = ">=0.1.0"
-nonebot2 = ">=2.0.0,<3.0.0"
+[package.source]
+type = "directory"
+url = "../ssttkkl-nonebot-utils"
 
 [[package]]
 name = "starlette"
@@ -2434,4 +2420,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "c225313c9407fb56e0ca35e9d5ff205f618ae1015bf67fb53031f981eb79bab5"
+content-hash = "4aeb80362b1ca9d5ce5d36821361405f78fb246a88eab7f3856dec66576c5cd6"
