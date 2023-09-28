@@ -7,17 +7,19 @@ NAGA公交车。为群友提供NAGA拼车服务。
 
 ### 对于车主
 
-首先你需要一个NAGA账号（废话），登录后在 https://naga.dmv.nico/naga_report/top/ 获取两个cookie（csrftoken和naga-report-session-id）填入配置中：
-
-```
-naga_cookies={"csrftoken":"xxxxxx","naga-report-session-id":"xxxxxx"}
-```
-
-其次你需要一个雀魂账号用于自动下载牌谱（推荐使用小号），将用户名与密码填入配置中：
+你需要一个雀魂账号用于自动下载牌谱（推荐使用小号），将用户名与密码填入配置中：
 
 ```
 majsoul_username=xxxxxx@xxx.com
 majsoul_password=xxxxxx
+```
+
+最后你需要一个NAGA账号（废话），登录后在 https://naga.dmv.nico/naga_report/top/ 获取两个cookie（csrftoken和naga-report-session-id），Bot启动后调用`/naga-set-cookies csrftoken=xxxxxxxx; naga-report-session-id=xxxxxxxx`指令
+
+（指令仅超级用户可用，通过在配置文件中设置SUPERUSERS可设置超级用户）
+
+```
+SUPERUSERS=["12345678"]
 ```
 
 #### 权限控制
