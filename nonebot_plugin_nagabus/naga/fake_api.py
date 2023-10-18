@@ -89,5 +89,5 @@ class FakeNagaApi:
 
         return AnalyzeTenhou(status=200, msg="")
 
-    async def get_resp_np(self) -> int:
+    async def get_rest_np(self) -> int:
         return self.rest_np

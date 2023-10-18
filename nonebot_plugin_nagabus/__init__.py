@@ -13,6 +13,7 @@ require("nonebot_plugin_datastore")
 require("nonebot_plugin_majsoul")
 require("nonebot_plugin_saa")
 require("nonebot_plugin_session")
+require("nonebot_plugin_session_orm")
 require("ssttkkl_nonebot_utils")
 
 from nonebot import logger

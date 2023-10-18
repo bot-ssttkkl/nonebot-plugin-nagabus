@@ -10,7 +10,7 @@ from httpx import Cookies
 from monthdelta import monthdelta
 from nonebot import logger
 from nonebot_plugin_session import Session
-from nonebot_plugin_session.model import get_or_add_session_model
+from nonebot_plugin_session_orm import get_session_persist_id, get_session_by_persist_id
 from sqlalchemy import select, update
 from tensoul.downloader import MajsoulDownloadError
 
@@ -291,9 +291,9 @@ class NagaService:
 
                     new_order = True
 
-                    session_model = await get_or_add_session_model(session, sess)
+                    session_persist_id = await get_session_persist_id(session)
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
-                                             customer_id=session_model.id,
+                                             customer_id=session_persist_id,
                                              cost_np=10,
                                              source=NagaOrderSource.majsoul,
                                              model_type=model_type_str,
@@ -413,10 +413,10 @@ class NagaService:
 
                     new_order = True
 
-                    session_model = await get_or_add_session_model(session, sess)
+                    session_persist_id = await get_session_persist_id(session)
 
                     order_orm = NagaOrderOrm(haihu_id=haihu_id,
-                                             customer_id=session_model.id,
+                                             customer_id=session_persist_id,
                                              cost_np=50 if rule == NagaGameRule.hanchan else 30,
                                              source=NagaOrderSource.tenhou,
                                              model_type=model_type_str,
