@@ -2,7 +2,7 @@ import asyncio
 
 from httpx import HTTPError
 from nonebot import logger
-from nonebot_plugin_access_control.errors import RateLimitedError, PermissionDeniedError
+from nonebot_plugin_access_control_api.errors import RateLimitedError, PermissionDeniedError
 from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 

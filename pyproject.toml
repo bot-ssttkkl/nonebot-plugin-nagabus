@@ -10,7 +10,7 @@ packages = [{ include = "nonebot_plugin_nagabus" }]
 python = "^3.9"
 nonebot2 = {extras = ["httpx"], version = "^2.0.0"}
 nonebot-adapter-onebot = ">=2.2.3"
-nonebot-plugin-access-control = ">=0.8.0,<1.0.0"
+nonebot-plugin-access-control-api = "^1.1.0"
 nonebot-plugin-datastore = "^1.1.0"
 nonebot-plugin-majsoul = ">=0.2.3"
 ssttkkl-nonebot-utils = ">=0.1.15"

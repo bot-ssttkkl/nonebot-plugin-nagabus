@@ -8,7 +8,7 @@ nonebot-plugin-nagabus
 
 from nonebot import require
 
-require("nonebot_plugin_access_control")
+require("nonebot_plugin_access_control_api")
 require("nonebot_plugin_datastore")
 require("nonebot_plugin_majsoul")
 require("nonebot_plugin_saa")
