@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import List, NamedTuple, Any
+from typing import NamedTuple
 
 
 class NagaGameRule(IntEnum):
@@ -34,7 +34,7 @@ class NagaModel(NamedTuple):
 
 class NagaReport(NamedTuple):
     haihu_id: str
-    players: List[NagaReportPlayer]
+    players: list[NagaReportPlayer]
     report_id: str
     seat: int
     model: NagaModel

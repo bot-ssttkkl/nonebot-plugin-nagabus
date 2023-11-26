@@ -1,9 +1,9 @@
-from datetime import datetime
 from enum import IntEnum
 from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 from .base import SqlModel
 from .utils import UTCDateTime
@@ -16,7 +16,7 @@ class NagaOrderSource(IntEnum):
 
 
 class NagaOrderOrm(SqlModel):
-    __tablename__ = 'nonebot_plugin_nagabus_order'
+    __tablename__ = "nonebot_plugin_nagabus_order"
     __table_args__ = {"extend_existing": True}
 
     haihu_id: Mapped[str] = mapped_column(primary_key=True)
@@ -31,17 +31,21 @@ class NagaOrderOrm(SqlModel):
 
 
 class MajsoulOrderOrm(SqlModel):
-    __tablename__ = 'nonebot_plugin_nagabus_majsoul_order'
+    __tablename__ = "nonebot_plugin_nagabus_majsoul_order"
     __table_args__ = {"extend_existing": True}
 
-    naga_haihu_id: Mapped[str] = mapped_column(ForeignKey("nonebot_plugin_nagabus_order.haihu_id", ondelete="cascade"),
-                                               primary_key=True)
+    naga_haihu_id: Mapped[str] = mapped_column(
+        ForeignKey("nonebot_plugin_nagabus_order.haihu_id", ondelete="cascade"),
+        primary_key=True,
+    )
     paipu_uuid: Mapped[str] = mapped_column(index=True)
     kyoku: Mapped[int]
     honba: Mapped[int]
     model_type: Mapped[str]
 
-    order: Mapped[NagaOrderOrm] = relationship(foreign_keys="MajsoulOrderOrm.naga_haihu_id",
-                                               cascade="save-update, delete",
-                                               passive_deletes=True,
-                                               lazy="joined")
+    order: Mapped[NagaOrderOrm] = relationship(
+        foreign_keys="MajsoulOrderOrm.naga_haihu_id",
+        cascade="save-update, delete",
+        passive_deletes=True,
+        lazy="joined",
+    )
