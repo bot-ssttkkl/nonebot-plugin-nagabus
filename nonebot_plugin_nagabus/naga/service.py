@@ -17,10 +17,10 @@ from nonebot_plugin_session_orm import get_session_persist_id
 from ..config import conf
 from ..utils.tz import TZ_TOKYO
 from .fake_api import FakeNagaApi
-from ..datastore import plugin_data
 from .utils import model_type_to_str
 from ..data.mjs import get_majsoul_paipu
 from .api import NagaApi, OrderReportList
+from ..data.naga_cookies import get_naga_cookies, set_naga_cookies
 from .errors import (
     OrderError,
     InvalidGameError,
@@ -120,14 +120,14 @@ class NagaService:
         self._order_report = ObservableOrderReport(self.api)
 
     async def start(self):
-        cookies_obj = await plugin_data.config.get("naga_cookies", {})
+        cookies_obj = await get_naga_cookies()
         self.cookies = Cookies(cookies_obj)
 
     async def close(self):
         await self.api.close()
 
     async def set_cookies(self, cookies: Mapping[str, str]):
-        await plugin_data.config.set("naga_cookies", cookies)
+        await set_naga_cookies(cookies)
         self.cookies = Cookies(dict(cookies))
         logger.info(
             f"naga_cookies set to {'; '.join(f'{kv[0]}={kv[1]}' for kv in cookies.items())}"
