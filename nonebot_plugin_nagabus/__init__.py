@@ -8,20 +8,20 @@ nonebot-plugin-nagabus
 
 from nonebot import require
 
-require("nonebot_plugin_access_control")
+require("nonebot_plugin_access_control_api")
 require("nonebot_plugin_datastore")
 require("nonebot_plugin_majsoul")
 require("nonebot_plugin_saa")
 require("nonebot_plugin_session")
+require("nonebot_plugin_session_orm")
 require("ssttkkl_nonebot_utils")
 
 from nonebot import logger
 from nonebot.plugin import PluginMetadata
+from ssttkkl_nonebot_utils.nonebot import default_command_start
 
 from .config import Config
 from .errors import ConfigError
-
-from ssttkkl_nonebot_utils.nonebot import default_command_start
 
 __usage__ = f"""
 牌谱分析：
@@ -38,16 +38,22 @@ __usage__ = f"""
 """.strip()
 
 __plugin_meta__ = PluginMetadata(
-    name='NAGA公交车',
-    description='为群友提供NAGA拼车服务',
+    name="NAGA公交车",
+    description="为群友提供NAGA拼车服务",
     usage=__usage__,
     type="application",
     homepage="https://github.com/bot-ssttkkl/nonebot-plugin-nagabus",
     config=Config,
-    supported_adapters={"~onebot.v11", "~onebot.v12", "~qqguild", "~kaiheila", "~telegram"}
+    supported_adapters={
+        "~onebot.v11",
+        "~onebot.v12",
+        "~qqguild",
+        "~kaiheila",
+        "~telegram",
+    },
 )
 
 try:
-    from . import matchers
+    from . import matchers  # noqa
 except ConfigError as e:
     logger.exception(e)

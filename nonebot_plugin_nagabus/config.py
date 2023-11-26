@@ -18,8 +18,8 @@ class Config(BaseSettings):
     def detect_sql_dialect(cls, values):
         if "datastore_database_url" in values:
             url = urlparse(values["datastore_database_url"])
-            if '+' in url.scheme:
-                sql_dialect = url.scheme.split('+')[0]
+            if "+" in url.scheme:
+                sql_dialect = url.scheme.split("+")[0]
             else:
                 sql_dialect = url.scheme
         else:

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import tzlocal
-from sqlalchemy import TypeDecorator, DateTime
+from sqlalchemy import DateTime, TypeDecorator
 
 
 class UTCDateTime(TypeDecorator):

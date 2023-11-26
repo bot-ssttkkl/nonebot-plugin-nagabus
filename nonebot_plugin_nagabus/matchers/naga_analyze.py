@@ -1,35 +1,50 @@
 import re
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from nonebot import on_command
-from nonebot.internal.matcher import Matcher
-from nonebot.internal.params import Depends
 from nonebot.params import CommandArg
+from nonebot.internal.params import Depends
 from nonebot_plugin_saa import MessageFactory
-from nonebot_plugin_session import extract_session, Session
-from ssttkkl_nonebot_utils.errors.errors import BadRequestError
 from ssttkkl_nonebot_utils.integer import decode_integer
-from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
-from ssttkkl_nonebot_utils.interceptor.with_graceful_shutdown import with_graceful_shutdown
-from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
+from nonebot_plugin_session import Session, extract_session
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError
 from ssttkkl_nonebot_utils.nonebot import default_command_start
+from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from nonebot_plugin_access_control_api.service.contextvars import (
+    current_rate_limit_token,
+)
+from ssttkkl_nonebot_utils.interceptor.with_graceful_shutdown import (
+    with_graceful_shutdown,
+)
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import (
+    with_handling_reaction,
+)
 
-from .errors import error_handlers
 from ..ac import ac
 from ..naga import naga
+from .errors import error_handlers
 from ..naga.errors import InvalidKyokuHonbaError
 
 analyze_srv = ac.create_subservice("analyze")
 
 
-async def analyze_majsoul(matcher: Matcher, session: Session, uuid: str, kyoku: int, honba: int):
+async def _retire_token():
+    try:
+        token = current_rate_limit_token.get()
+        await token.retire()
+    except LookupError:
+        pass
+
+
+async def analyze_majsoul(session: Session, uuid: str, kyoku: int, honba: int):
     try:
         report, cost_np = await naga.analyze_majsoul(uuid, kyoku, honba, session)
-        await MessageFactory(f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw=0").send(reply=True)
+        await MessageFactory(
+            f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw=0"
+        ).send(reply=True)
 
         if cost_np == 0:
-            token = matcher.state["ac_token"]
-            await token.retire()
+            await _retire_token()
             await MessageFactory("由于此前已解析过该局，本次解析消耗0NP").send(reply=True)
         else:
             await MessageFactory(f"本次解析消耗{cost_np}NP").send(reply=True)
@@ -46,13 +61,14 @@ async def analyze_majsoul(matcher: Matcher, session: Session, uuid: str, kyoku: 
         raise BadRequestError(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）") from e
 
 
-async def analyze_tenhou(matcher: Matcher, session: Session, haihu_id: str, seat: int):
+async def analyze_tenhou(session: Session, haihu_id: str, seat: int):
     report, cost_np = await naga.analyze_tenhou(haihu_id, seat, session)
-    await MessageFactory(f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw={seat}").send(reply=True)
+    await MessageFactory(
+        f"https://naga.dmv.nico/htmls/{report.report_id}.html?tw={seat}"
+    ).send(reply=True)
 
     if cost_np == 0:
-        token = matcher.state["ac_token"]
-        await token.retire()
+        await _retire_token()
         await MessageFactory("由于此前已解析过该局，本次解析消耗0NP").send(reply=True)
     else:
         await MessageFactory(f"本次解析消耗{cost_np}NP").send(reply=True)
@@ -60,9 +76,13 @@ async def analyze_tenhou(matcher: Matcher, session: Session, haihu_id: str, seat
 
 naga_analyze_matcher = on_command("naga", priority=10)
 
-uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
+uuid_reg = re.compile(
+    r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}"
+)
 
-kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789零一两二三四五六七八九十百千万亿]+)本场)?")
+kyoku_honba_reg = re.compile(
+    r"([东南西])([一二三四1234])局(([0123456789零一两二三四五六七八九十百千万亿]+)本场)?"
+)
 
 
 @naga_analyze_matcher.handle()
@@ -70,9 +90,10 @@ kyoku_honba_reg = re.compile(r"([东南西])([一二三四1234])局(([0123456789
 @handle_error(error_handlers)
 @analyze_srv.patch_handler(retire_on_throw=True)
 @with_handling_reaction()
-async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
-                       session: Session = Depends(extract_session)):
-    args = cmd_args.extract_plain_text().split(' ')
+async def naga_analyze(
+    cmd_args=CommandArg(), session: Session = Depends(extract_session)
+):
+    args = cmd_args.extract_plain_text().split(" ")
     if "maj-soul" in args[0]:
         mat = uuid_reg.search(args[0])
         if not mat:
@@ -90,9 +111,9 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
 
                 try:
                     kyoku = decode_integer(raw_kyoku) - 1
-                    if raw_wind == '南':
+                    if raw_wind == "南":
                         kyoku += 4
-                    elif raw_wind == '西':
+                    elif raw_wind == "西":
                         kyoku += 8
 
                     if raw_honba is not None:
@@ -100,7 +121,8 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
                 except ValueError:
                     pass
 
-        await analyze_majsoul(matcher, session, uuid, kyoku, honba)  # 如果未指定场次本场，则让其发送该局的场次本场信息
+        # 如果未指定场次本场，则让其发送该局的场次本场信息
+        await analyze_majsoul(session, uuid, kyoku, honba)
     elif "tenhou" in args[0]:
         tenhou_url = args[0].strip()
 
@@ -112,7 +134,7 @@ async def naga_analyze(matcher: Matcher, cmd_args=CommandArg(),
         if "tw" in tenhou_query and len(tenhou_query["tw"]) > 0:
             seat = int(tenhou_query["tw"][0])
 
-        await analyze_tenhou(matcher, session, haihu_id, seat)
+        await analyze_tenhou(session, haihu_id, seat)
     else:
         await MessageFactory(
             "用法：\n"

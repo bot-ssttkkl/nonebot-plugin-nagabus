@@ -1,10 +1,13 @@
 import asyncio
 
-from httpx import HTTPError
 from nonebot import logger
-from nonebot_plugin_access_control.errors import RateLimitedError, PermissionDeniedError
-from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
+from httpx import HTTPError
 from ssttkkl_nonebot_utils.nonebot import default_command_start
+from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
+from nonebot_plugin_access_control_api.errors import (
+    RateLimitedError,
+    PermissionDeniedError,
+)
 
 from ..config import conf
 from ..naga.errors import OrderError, InvalidGameError, UnsupportedGameError
@@ -48,14 +51,14 @@ def _(e):
 
 @error_handlers.register(HTTPError)
 def _(e):
-    msg = f"网络错误"
+    msg = "网络错误"
     logger.opt(exception=e).error(msg)
     return msg
 
 
 @error_handlers.register(asyncio.TimeoutError)
 def _(e):
-    msg = f"查询超时，请在NAGA网页端检查是否已成功解析"
+    msg = "查询超时，请在NAGA网页端检查是否已成功解析"
     logger.opt(exception=e).error(msg)
     return msg
 

@@ -1,19 +1,26 @@
-import json
 import re
-from typing import List, Union, Sequence, Callable
+import json
+from typing import Union, Callable
+from collections.abc import Sequence
 
-from httpx import AsyncClient, Cookies
 from nonebot import logger
 from pydantic import BaseModel
+from httpx import Cookies, AsyncClient
 
-from .errors import InvalidTokenError
-from .model import NagaReport, NagaOrder, NagaHanchanModelType, NagaTonpuuModelType, NagaGameRule
 from .utils import model_type_to_str
+from .errors import InvalidTokenError
+from .model import (
+    NagaOrder,
+    NagaReport,
+    NagaGameRule,
+    NagaTonpuuModelType,
+    NagaHanchanModelType,
+)
 
 
 class OrderReportList(BaseModel):
-    report: List[NagaReport]
-    order: List[NagaOrder]
+    report: list[NagaReport]
+    order: list[NagaOrder]
 
 
 class AnalyzeTenhou(BaseModel):
@@ -35,11 +42,15 @@ class NagaApi:
         async def req_hook(request):
             # 手动设置cookies
             self.cookies.set_cookie_header(request)
-            logger.trace(f"Request: {request.method} {request.url} - Waiting for response")
+            logger.trace(
+                f"Request: {request.method} {request.url} - Waiting for response"
+            )
 
         async def resp_hook(response):
             request = response.request
-            logger.trace(f"Response: {request.method} {request.url} - Status {response.status_code}")
+            logger.trace(
+                f"Response: {request.method} {request.url} - Status {response.status_code}"
+            )
 
             # 始终清除掉响应带的cookies
             self.client.cookies = None
@@ -54,7 +65,7 @@ class NagaApi:
             base_url=self._BASE_URL,
             headers=self._HEADER,
             follow_redirects=True,
-            event_hooks={'request': [req_hook], 'response': [resp_hook]},
+            event_hooks={"request": [req_hook], "response": [resp_hook]},
         )
 
     @property
@@ -67,40 +78,42 @@ class NagaApi:
     async def order_report_list(self, year: int, month: int) -> OrderReportList:
         resp = await self.client.get(
             "/api/order_report_list/",
-            headers={
-                "Referer": "https://naga.dmv.nico/naga_report/order_report_list/"
-            },
-            params={"year": year, "month": month}
+            headers={"Referer": "https://naga.dmv.nico/naga_report/order_report_list/"},
+            params={"year": year, "month": month},
         )
         return OrderReportList.parse_obj(resp.json())
 
     async def _get_csrfmiddlewaretoken(self) -> str:
-        resp = await self.client.get(
-            "/order_form/"
+        resp = await self.client.get("/order_form/")
+        mat = re.search(
+            r"<input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"(.*)\">",
+            resp.text,
         )
-        mat = re.search(r"<input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"(.*)\">", resp.text)
         if mat is None:
             raise RuntimeError("cannot get csrfmiddlewaretoken")
         return mat.group(1)
 
-    async def analyze_tenhou(self, haihu_id: str, seat: int,
-                             rule: NagaGameRule,
-                             model_type: Union[Sequence[NagaHanchanModelType],
-                                               Sequence[NagaHanchanModelType]]) -> AnalyzeTenhou:
+    async def analyze_tenhou(
+        self,
+        haihu_id: str,
+        seat: int,
+        rule: NagaGameRule,
+        model_type: Union[
+            Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+        ],
+    ) -> AnalyzeTenhou:
         data = {
             "haihu_id": haihu_id,
             "seat": seat,
             "reanalysis": 0,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken()
+            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken(),
         }
 
         resp = await self.client.post(
             "/api/url_analyze/",
-            headers={
-                "Referer": "https://naga.dmv.nico/naga_report/order_form/"
-            },
-            data=data
+            headers={"Referer": "https://naga.dmv.nico/naga_report/order_form/"},
+            data=data,
         )
 
         if len(resp.content) > 0:
@@ -108,10 +121,15 @@ class NagaApi:
         else:
             return AnalyzeTenhou(status=200, msg="")
 
-    async def analyze_custom(self, data: Union[list, str], seat: int,
-                             rule: NagaGameRule,
-                             model_type: Union[Sequence[NagaHanchanModelType],
-                                               Sequence[NagaTonpuuModelType]]):
+    async def analyze_custom(
+        self,
+        data: Union[list, str],
+        seat: int,
+        rule: NagaGameRule,
+        model_type: Union[
+            Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
+        ],
+    ):
         if not isinstance(data, str):
             data = json.dumps(data, ensure_ascii=False)
 
@@ -120,21 +138,17 @@ class NagaApi:
             "seat": seat,
             "game_type": rule.value,
             "player_types": model_type_to_str(model_type),
-            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken()
+            "csrfmiddlewaretoken": await self._get_csrfmiddlewaretoken(),
         }
 
         await self.client.post(
             "/api/custom_haihu_analyze/",
-            headers={
-                "Referer": "https://naga.dmv.nico/naga_report/order_form/"
-            },
-            data=res_data
+            headers={"Referer": "https://naga.dmv.nico/naga_report/order_form/"},
+            data=res_data,
         )
 
     async def get_rest_np(self) -> int:
-        resp = await self.client.get(
-            "/order_form/"
-        )
+        resp = await self.client.get("/order_form/")
         mat = re.search(r"const base_left_point = (\d+)", resp.text)
         if mat is None:
             raise RuntimeError("cannot get base_left_point")

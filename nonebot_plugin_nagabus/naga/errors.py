@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from collections.abc import Sequence
 
 
 class NagaError(BaseException):
@@ -22,6 +22,6 @@ class UnsupportedGameError(NagaError):
 
 
 class InvalidKyokuHonbaError(NagaError):
-    def __init__(self, available_kyoku_honba: Sequence[Tuple[int, int]]):
+    def __init__(self, available_kyoku_honba: Sequence[tuple[int, int]]):
         super().__init__()
         self.available_kyoku_honba = available_kyoku_honba
