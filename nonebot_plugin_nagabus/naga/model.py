@@ -1,5 +1,6 @@
 from enum import IntEnum
-from typing import NamedTuple
+
+from pydantic import BaseModel
 
 
 class NagaGameRule(IntEnum):
@@ -20,19 +21,19 @@ class NagaHanchanModelType(IntEnum):
     kagashi = 4
 
 
-class NagaReportPlayer(NamedTuple):
+class NagaReportPlayer(BaseModel):
     nickname: str
     pt: int
 
 
-class NagaModel(NamedTuple):
+class NagaModel(BaseModel):
     major: int
     minor: int
     old_type: int  # 新版本恒为0，旧版本为NagaHanchanModelType/NagaTonpuuModelType的枚举值
     type: str  # NagaHanchanModelType/NagaTonpuuModelType的枚举值，逗号分隔
 
 
-class NagaReport(NamedTuple):
+class NagaReport(BaseModel):
     haihu_id: str
     players: list[NagaReportPlayer]
     report_id: str
@@ -49,18 +50,18 @@ class NagaOrderStatus(IntEnum):
     failed2 = 4
 
 
-class NagaOrder(NamedTuple):
+class NagaOrder(BaseModel):
     haihu_id: str
     status: NagaOrderStatus
     model: NagaModel
     rule: NagaGameRule
 
 
-class NagaServiceOrder(NamedTuple):
+class NagaServiceOrder(BaseModel):
     report: NagaReport
     cost_np: int
 
 
-class NagaServiceUserStatistic(NamedTuple):
+class NagaServiceUserStatistic(BaseModel):
     customer_id: int
     cost_np: int

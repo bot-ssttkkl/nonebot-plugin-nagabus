@@ -1,15 +1,16 @@
-import json
 from enum import IntEnum
 from typing import Optional
 from datetime import datetime, timezone
 
 from nonebot import logger
+from nonebot_plugin_orm import AsyncSession
 from sqlalchemy import ForeignKey, select, update
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
+from nonebot_plugin_nagabus.data.utils.pydantic import PydanticModel
+
 from .base import SqlModel
 from .utils import UTCDateTime
-from .utils.session import _use_session
 from ..naga.model import NagaReport, NagaGameRule, NagaOrderStatus
 
 
@@ -28,7 +29,7 @@ class NagaOrderOrm(SqlModel):
     source: Mapped[NagaOrderSource]
     model_type: Mapped[str]
     status: Mapped[NagaOrderStatus]
-    naga_report: Mapped[Optional[str]]  # json of NagaReport
+    naga_report: Mapped[Optional[NagaReport]] = mapped_column(PydanticModel(NagaReport))
     create_time: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     update_time: Mapped[datetime] = mapped_column(UTCDateTime)
 
@@ -54,20 +55,23 @@ class MajsoulOrderOrm(SqlModel):
     )
 
 
-async def get_orders(t_begin: datetime, t_end: datetime) -> list[NagaOrderOrm]:
-    async with _use_session() as sess:
+class NagaRepository:
+    def __init__(self, sess: AsyncSession):
+        self.sess = sess
+
+    async def get_orders(
+        self, t_begin: datetime, t_end: datetime
+    ) -> list[NagaOrderOrm]:
         stmt = select(NagaOrderOrm).where(
             NagaOrderOrm.create_time >= t_begin,
             NagaOrderOrm.create_time < t_end,
             NagaOrderOrm.status == NagaOrderStatus.ok,
         )
-        return list((await sess.execute(stmt)).scalars())
+        return list((await self.sess.execute(stmt)).scalars())
 
-
-async def get_local_majsoul_order(
-    majsoul_uuid: str, kyoku: int, honba: int, model_type: str
-) -> Optional[NagaOrderOrm]:
-    async with _use_session() as sess:
+    async def get_local_majsoul_order(
+        self, majsoul_uuid: str, kyoku: int, honba: int, model_type: str
+    ) -> Optional[NagaOrderOrm]:
         stmt = select(MajsoulOrderOrm).where(
             MajsoulOrderOrm.paipu_uuid == majsoul_uuid,
             MajsoulOrderOrm.kyoku == kyoku,
@@ -76,7 +80,7 @@ async def get_local_majsoul_order(
         )
 
         order_orm: Optional[MajsoulOrderOrm] = (
-            await sess.execute(stmt)
+            await self.sess.execute(stmt)
         ).scalar_one_or_none()
         if order_orm is not None:
             if (
@@ -93,21 +97,20 @@ async def get_local_majsoul_order(
                     f"analyze order: {order_orm.naga_haihu_id}, "
                     f"because it takes over 90 seconds and still not done"
                 )
-                await sess.delete(order_orm.order)
-                await sess.delete(order_orm)
-                await sess.commit()
+                await self.sess.delete(order_orm.order)
+                await self.sess.delete(order_orm)
+                await self.sess.commit()
                 return None
 
-
-async def new_local_majsoul_order(
-    haihu_id: str,
-    customer_id: int,
-    majsoul_uuid: str,
-    kyoku: int,
-    honba: int,
-    model_type: str,
-):
-    async with _use_session() as sess:
+    async def new_local_majsoul_order(
+        self,
+        haihu_id: str,
+        customer_id: int,
+        majsoul_uuid: str,
+        kyoku: int,
+        honba: int,
+        model_type: str,
+    ):
         order_orm = NagaOrderOrm(
             haihu_id=haihu_id,
             customer_id=customer_id,
@@ -128,35 +131,20 @@ async def new_local_majsoul_order(
             order=order_orm,
         )
 
-        sess.add(order_orm)
-        sess.add(majsoul_order_orm)
-        await sess.commit()
+        self.sess.add(order_orm)
+        self.sess.add(majsoul_order_orm)
+        await self.sess.commit()
 
-
-async def update_local_majsoul_order(haihu_id: str, report: NagaReport):
-    async with _use_session() as sess:
-        stmt = (
-            update(NagaOrderOrm)
-            .where(NagaOrderOrm.haihu_id == haihu_id)
-            .values(
-                status=NagaOrderStatus.ok,
-                naga_report=json.dumps(report),
-                update_time=datetime.now(timezone.utc),
-            )
-        )
-        await sess.execute(stmt)
-        await sess.commit()
-
-
-async def get_local_order(haihu_id: str, model_type: str) -> Optional[NagaOrderOrm]:
-    async with _use_session() as sess:
+    async def get_local_order(
+        self, haihu_id: str, model_type: str
+    ) -> Optional[NagaOrderOrm]:
         stmt = select(NagaOrderOrm).where(
             NagaOrderOrm.haihu_id == haihu_id,
             NagaOrderOrm.model_type == model_type,
         )
 
         order_orm: Optional[NagaOrderOrm] = (
-            await sess.execute(stmt)
+            await self.sess.execute(stmt)
         ).scalar_one_or_none()
         if order_orm is not None:
             if (
@@ -171,15 +159,13 @@ async def get_local_order(haihu_id: str, model_type: str) -> Optional[NagaOrderO
                     f"Delete tenhou paipu <y>{haihu_id}</y> analyze order "
                     f"because it takes over 90 seconds and still not done"
                 )
-                await sess.delete(order_orm)
-                await sess.commit()
+                await self.sess.delete(order_orm)
+                await self.sess.commit()
                 return None
 
-
-async def new_local_order(
-    haihu_id: str, customer_id: int, rule: NagaGameRule, model_type: str
-):
-    async with _use_session() as sess:
+    async def new_local_order(
+        self, haihu_id: str, customer_id: int, rule: NagaGameRule, model_type: str
+    ):
         order_orm = NagaOrderOrm(
             haihu_id=haihu_id,
             customer_id=customer_id,
@@ -191,20 +177,18 @@ async def new_local_order(
             update_time=datetime.now(tz=timezone.utc),
         )
 
-        sess.add(order_orm)
-        await sess.commit()
+        self.sess.add(order_orm)
+        await self.sess.commit()
 
-
-async def update_local_order(haihu_id: str, report: NagaReport):
-    async with _use_session() as sess:
+    async def update_local_order(self, haihu_id: str, report: NagaReport):
         stmt = (
             update(NagaOrderOrm)
             .where(NagaOrderOrm.haihu_id == haihu_id)
             .values(
                 status=NagaOrderStatus.ok,
-                naga_report=json.dumps(report),
+                naga_report=report,
                 update_time=datetime.now(timezone.utc),
             )
         )
-        await sess.execute(stmt)
-        await sess.commit()
+        await self.sess.execute(stmt)
+        await self.sess.commit()

@@ -97,9 +97,8 @@ class NagaApi:
         self,
         haihu_id: str,
         seat: int,
-        rule: NagaGameRule,
         model_type: Union[
-            Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ],
     ) -> AnalyzeTenhou:
         data = {

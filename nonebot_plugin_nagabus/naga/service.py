@@ -1,5 +1,4 @@
 import re
-import json
 import asyncio
 from asyncio import Lock
 from typing import Union
@@ -11,6 +10,8 @@ from httpx import Cookies
 from nonebot import logger
 from monthdelta import monthdelta
 from nonebot_plugin_session import Session
+from nonebot_plugin_orm import AsyncSession
+from nonebot_plugin_datastore.db import get_engine
 from tensoul.downloader import MajsoulDownloadError
 from nonebot_plugin_session_orm import get_session_persist_id
 
@@ -18,9 +19,9 @@ from ..config import conf
 from ..utils.tz import TZ_TOKYO
 from .fake_api import FakeNagaApi
 from .utils import model_type_to_str
+from ..data.naga import NagaRepository
 from ..data.mjs import get_majsoul_paipu
 from .api import NagaApi, OrderReportList
-from ..data.utils.session import _use_session
 from ..data.naga_cookies import get_naga_cookies, set_naga_cookies
 from .errors import (
     OrderError,
@@ -37,15 +38,6 @@ from .model import (
     NagaTonpuuModelType,
     NagaHanchanModelType,
     NagaServiceUserStatistic,
-)
-from ..data.naga import (
-    get_orders,
-    get_local_order,
-    new_local_order,
-    update_local_order,
-    get_local_majsoul_order,
-    new_local_majsoul_order,
-    update_local_majsoul_order,
 )
 
 DURATION = 2
@@ -253,7 +245,8 @@ class NagaService:
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        async with _use_session():
+        async with AsyncSession(get_engine()) as sess:
+            repo = NagaRepository(sess)
             try:
                 data = await get_majsoul_paipu(majsoul_uuid)
             except MajsoulDownloadError as e:
@@ -303,12 +296,12 @@ class NagaService:
             new_order = False
 
             # 加锁防止重复下单
-            local_order = await get_local_majsoul_order(
+            local_order = await repo.get_local_majsoul_order(
                 majsoul_uuid, kyoku, honba, model_type_str
             )
             if local_order is None:
                 async with self._majsoul_order_mutex:
-                    local_order = await get_local_majsoul_order(
+                    local_order = await repo.get_local_majsoul_order(
                         majsoul_uuid, kyoku, honba, model_type_str
                     )
                     if local_order is None:
@@ -332,7 +325,7 @@ class NagaService:
                         new_order = True
 
                         session_persist_id = await get_session_persist_id(session)
-                        await new_local_majsoul_order(
+                        await repo.new_local_majsoul_order(
                             haihu_id,
                             session_persist_id,
                             majsoul_uuid,
@@ -349,10 +342,10 @@ class NagaService:
                         f"(kyoku: {kyoku}, honba: {honba})</y> "
                         f"analyze report: {local_order.haihu_id}"
                     )
-                    report = NagaReport(*json.loads(local_order.naga_report))
-                    return NagaServiceOrder(report, 0)
+                    report = local_order.naga_report
+                    return NagaServiceOrder(report=report, cost_np=0)
 
-                haihu_id = local_order.naga_haihu_id
+                haihu_id = local_order.haihu_id
                 logger.opt(colors=True).info(
                     f"Found a processing majsoul paipu <y>{majsoul_uuid} "
                     f"(kyoku: {kyoku}, honba: {honba})</y> "
@@ -375,21 +368,20 @@ class NagaService:
                     f"(kyoku: {kyoku}, honba: {honba})</y> "
                     f"analyze report: {haihu_id}..."
                 )
-                await update_local_majsoul_order(haihu_id, report)
-                return NagaServiceOrder(report, 10)
+                await repo.update_local_order(haihu_id, report)
+                return NagaServiceOrder(report=report, cost_np=10)
             else:
-                return NagaServiceOrder(report, 0)
+                return NagaServiceOrder(report=report, cost_np=0)
 
     async def _order_tenhou(
         self,
         haihu_id: str,
         seat: int,
-        rule: NagaGameRule,
         model_type: Union[
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ):
-        res = await self.api.analyze_tenhou(haihu_id, seat, rule, model_type)
+        res = await self.api.analyze_tenhou(haihu_id, seat, model_type)
         if res.status != 200:
             raise OrderError(res.msg)
 
@@ -404,7 +396,8 @@ class NagaService:
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        async with _use_session():
+        async with AsyncSession(get_engine()) as sess:
+            repo = NagaRepository(sess)
             if not self._tenhou_haihu_id_reg.match(haihu_id):
                 raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
 
@@ -429,22 +422,22 @@ class NagaService:
             new_order = False
 
             # 加锁防止重复下单
-            local_order = await get_local_order(haihu_id, model_type_str)
+            local_order = await repo.get_local_order(haihu_id, model_type_str)
             if local_order is None:
                 async with self._tenhou_order_mutex:
-                    local_order = await get_local_order(haihu_id, model_type_str)
+                    local_order = await repo.get_local_order(haihu_id, model_type_str)
                     if local_order is None:
                         # 不存在记录，安排解析
                         logger.opt(colors=True).info(
                             f"Ordering tenhou paipu <y>{haihu_id}</y> analyze..."
                         )
 
-                        await self._order_tenhou(haihu_id, seat, rule, model_type)
+                        await self._order_tenhou(haihu_id, seat, model_type)
 
                         new_order = True
 
                         session_persist_id = await get_session_persist_id(session)
-                        await new_local_order(
+                        await repo.new_local_order(
                             haihu_id, session_persist_id, rule, model_type_str
                         )
 
@@ -455,8 +448,8 @@ class NagaService:
                         f"Found a existing tenhou paipu <y>{haihu_id})</y> "
                         "analyze report"
                     )
-                    report = NagaReport(*json.loads(local_order.naga_report))
-                    return NagaServiceOrder(report, 0)
+                    report = local_order.naga_report
+                    return NagaServiceOrder(report=report, cost_np=0)
 
                 logger.opt(colors=True).info(
                     f"Found a processing tenhou paipu <y>{haihu_id})</y> "
@@ -473,17 +466,18 @@ class NagaService:
                 logger.opt(colors=True).debug(
                     f"Updating tenhou paipu <y>{haihu_id})</y> " "analyze report..."
                 )
-                await update_local_order(haihu_id, report)
+                await repo.update_local_order(haihu_id, report)
 
-                return NagaServiceOrder(report, 50)
+                return NagaServiceOrder(report=report, cost_np=50)
             else:
-                return NagaServiceOrder(report, 0)
+                return NagaServiceOrder(report=report, cost_np=0)
 
     async def statistic(self, year: int, month: int) -> list[NagaServiceUserStatistic]:
-        async with _use_session():
+        async with AsyncSession(get_engine()) as sess:
+            repo = NagaRepository(sess)
             t_begin = datetime(year, month, 1)
             t_end = datetime(year, month, 1) + monthdelta(months=1)
-            orders = await get_orders(t_begin, t_end)
+            orders = await repo.get_orders(t_begin, t_end)
 
             statistic = {}
 
@@ -493,7 +487,8 @@ class NagaService:
                 statistic[order.customer_id] += order.cost_np
 
             statistic = [
-                NagaServiceUserStatistic(x[0], x[1]) for x in statistic.items()
+                NagaServiceUserStatistic(customer_id=x[0], cost_np=x[1])
+                for x in statistic.items()
             ]
             statistic.sort(key=lambda x: x.cost_np, reverse=True)
             return statistic
