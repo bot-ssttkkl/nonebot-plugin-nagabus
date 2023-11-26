@@ -2,15 +2,14 @@ import re
 import json
 import asyncio
 from asyncio import Lock
+from typing import Union
+from datetime import datetime
 from inspect import isawaitable
-from typing import Union, Optional
-from datetime import datetime, timezone
 from collections.abc import Mapping, Sequence
 
 from httpx import Cookies
 from nonebot import logger
 from monthdelta import monthdelta
-from sqlalchemy import select, update
 from nonebot_plugin_session import Session
 from tensoul.downloader import MajsoulDownloadError
 from nonebot_plugin_session_orm import get_session_persist_id
@@ -20,10 +19,8 @@ from ..utils.tz import TZ_TOKYO
 from .fake_api import FakeNagaApi
 from ..datastore import plugin_data
 from .utils import model_type_to_str
-from ..data.session import get_session
 from ..data.mjs import get_majsoul_paipu
 from .api import NagaApi, OrderReportList
-from ..data.naga import NagaOrderOrm, MajsoulOrderOrm, NagaOrderSource
 from .errors import (
     OrderError,
     InvalidGameError,
@@ -39,6 +36,15 @@ from .model import (
     NagaTonpuuModelType,
     NagaHanchanModelType,
     NagaServiceUserStatistic,
+)
+from ..data.naga import (
+    get_orders,
+    get_local_order,
+    new_local_order,
+    update_local_order,
+    get_local_majsoul_order,
+    new_local_majsoul_order,
+    update_local_majsoul_order,
 )
 
 DURATION = 2
@@ -124,7 +130,7 @@ class NagaService:
         await plugin_data.config.set("naga_cookies", cookies)
         self.cookies = Cookies(dict(cookies))
         logger.info(
-            f"naga_cookies set to {'; '.join((f'{kv[0]}={kv[1]}' for kv in cookies.items()))}"
+            f"naga_cookies set to {'; '.join(f'{kv[0]}={kv[1]}' for kv in cookies.items())}"
         )
 
     async def _get_report(self, haihu_id: str) -> NagaReport:
@@ -214,9 +220,9 @@ class NagaService:
     def _handle_model_type(
         rule: NagaGameRule,
         model_type: Union[
-            None, Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ],
-    ) -> Union[Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]]:
+    ) -> Union[Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]]:
         if rule == NagaGameRule.hanchan:
             if model_type is None:
                 model_type = [
@@ -246,8 +252,6 @@ class NagaService:
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        sess = get_session()
-
         try:
             data = await get_majsoul_paipu(majsoul_uuid)
         except MajsoulDownloadError as e:
@@ -293,42 +297,15 @@ class NagaService:
         haihu_id = ""
         new_order = False
 
-        async def _get_local_order() -> Optional[NagaOrderOrm]:
-            stmt = select(MajsoulOrderOrm).where(
-                MajsoulOrderOrm.paipu_uuid == majsoul_uuid,
-                MajsoulOrderOrm.kyoku == kyoku,
-                MajsoulOrderOrm.honba == honba,
-                MajsoulOrderOrm.model_type == model_type_str,
-            )
-
-            order_orm: Optional[MajsoulOrderOrm] = (
-                await sess.execute(stmt)
-            ).scalar_one_or_none()
-            if order_orm is not None:
-                if (
-                    order_orm.order.status == NagaOrderStatus.ok
-                    or datetime.now(tz=timezone.utc).timestamp()
-                    - order_orm.order.update_time.timestamp()
-                    < 90
-                ):
-                    return order_orm.order
-                else:  # 超过90s仍未分析完成则删除重来
-                    logger.opt(colors=True).info(
-                        f"Delete majsoul paipu <y>{majsoul_uuid} "
-                        f"(kyoku: {kyoku}, honba: {honba})</y> "
-                        f"analyze order: {order_orm.naga_haihu_id}, "
-                        f"because it takes over 90 seconds and still not done"
-                    )
-                    await sess.delete(order_orm.order)
-                    await sess.delete(order_orm)
-                    await sess.commit()
-                    return None
-
         # 加锁防止重复下单
-        local_order = await _get_local_order()
+        local_order = await get_local_majsoul_order(
+            majsoul_uuid, kyoku, honba, model_type_str
+        )
         if local_order is None:
             async with self._majsoul_order_mutex:
-                local_order = await _get_local_order()
+                local_order = await get_local_majsoul_order(
+                    majsoul_uuid, kyoku, honba, model_type_str
+                )
                 if local_order is None:
                     # 不存在记录，安排解析
                     logger.opt(colors=True).info(
@@ -350,29 +327,14 @@ class NagaService:
                     new_order = True
 
                     session_persist_id = await get_session_persist_id(session)
-                    order_orm = NagaOrderOrm(
-                        haihu_id=haihu_id,
-                        customer_id=session_persist_id,
-                        cost_np=10,
-                        source=NagaOrderSource.majsoul,
-                        model_type=model_type_str,
-                        status=NagaOrderStatus.analyzing,
-                        create_time=datetime.now(tz=timezone.utc),
-                        update_time=datetime.now(tz=timezone.utc),
+                    await new_local_majsoul_order(
+                        haihu_id,
+                        session_persist_id,
+                        majsoul_uuid,
+                        kyoku,
+                        honba,
+                        model_type_str,
                     )
-
-                    majsoul_order_orm = MajsoulOrderOrm(
-                        naga_haihu_id=haihu_id,
-                        paipu_uuid=majsoul_uuid,
-                        kyoku=kyoku,
-                        honba=honba,
-                        model_type=model_type_str,
-                        order=order_orm,
-                    )
-
-                    sess.add(order_orm)
-                    sess.add(majsoul_order_orm)
-                    await sess.commit()
 
         if local_order is not None:
             # 存在记录
@@ -408,18 +370,7 @@ class NagaService:
                 f"(kyoku: {kyoku}, honba: {honba})</y> "
                 f"analyze report: {haihu_id}..."
             )
-            stmt = (
-                update(NagaOrderOrm)
-                .where(NagaOrderOrm.haihu_id == haihu_id)
-                .values(
-                    status=NagaOrderStatus.ok,
-                    naga_report=json.dumps(report),
-                    update_time=datetime.now(timezone.utc),
-                )
-            )
-            await sess.execute(stmt)
-            await sess.commit()
-
+            await update_local_majsoul_order(haihu_id, report)
             return NagaServiceOrder(report, 10)
         else:
             return NagaServiceOrder(report, 0)
@@ -430,7 +381,7 @@ class NagaService:
         seat: int,
         rule: NagaGameRule,
         model_type: Union[
-            None, Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ):
         res = await self.api.analyze_tenhou(haihu_id, seat, rule, model_type)
@@ -445,11 +396,9 @@ class NagaService:
         session: Session,
         *,
         model_type: Union[
-            None, Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        sess = get_session()
-
         if not self._tenhou_haihu_id_reg.match(haihu_id):
             raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
 
@@ -473,37 +422,11 @@ class NagaService:
 
         new_order = False
 
-        async def _get_local_order() -> Optional[NagaOrderOrm]:
-            stmt = select(NagaOrderOrm).where(
-                NagaOrderOrm.haihu_id == haihu_id,
-                NagaOrderOrm.model_type == model_type_str,
-            )
-
-            order_orm: Optional[NagaOrderOrm] = (
-                await sess.execute(stmt)
-            ).scalar_one_or_none()
-            if order_orm is not None:
-                if (
-                    order_orm.status == NagaOrderStatus.ok
-                    or datetime.now(tz=timezone.utc).timestamp()
-                    - order_orm.update_time.timestamp()
-                    < 300
-                ):
-                    return order_orm
-                else:  # 超过90s仍未分析完成则删除重来
-                    logger.opt(colors=True).info(
-                        f"Delete tenhou paipu <y>{haihu_id}</y> analyze order "
-                        f"because it takes over 90 seconds and still not done"
-                    )
-                    await sess.delete(order_orm)
-                    await sess.commit()
-                    return None
-
         # 加锁防止重复下单
-        local_order = await _get_local_order()
+        local_order = await get_local_order(haihu_id, model_type_str)
         if local_order is None:
             async with self._tenhou_order_mutex:
-                local_order = await _get_local_order()
+                local_order = await get_local_order(haihu_id, model_type_str)
                 if local_order is None:
                     # 不存在记录，安排解析
                     logger.opt(colors=True).info(
@@ -515,20 +438,9 @@ class NagaService:
                     new_order = True
 
                     session_persist_id = await get_session_persist_id(session)
-
-                    order_orm = NagaOrderOrm(
-                        haihu_id=haihu_id,
-                        customer_id=session_persist_id,
-                        cost_np=50 if rule == NagaGameRule.hanchan else 30,
-                        source=NagaOrderSource.tenhou,
-                        model_type=model_type_str,
-                        status=NagaOrderStatus.analyzing,
-                        create_time=datetime.now(tz=timezone.utc),
-                        update_time=datetime.now(tz=timezone.utc),
+                    await new_local_order(
+                        haihu_id, session_persist_id, rule, model_type_str
                     )
-
-                    sess.add(order_orm)
-                    await sess.commit()
 
         if local_order is not None:
             # 存在记录
@@ -554,35 +466,16 @@ class NagaService:
             logger.opt(colors=True).debug(
                 f"Updating tenhou paipu <y>{haihu_id})</y> " "analyze report..."
             )
-            stmt = (
-                update(NagaOrderOrm)
-                .where(NagaOrderOrm.haihu_id == haihu_id)
-                .values(
-                    status=NagaOrderStatus.ok,
-                    naga_report=json.dumps(report),
-                    update_time=datetime.now(timezone.utc),
-                )
-            )
-            await sess.execute(stmt)
-            await sess.commit()
+            await update_local_order(haihu_id, report)
 
             return NagaServiceOrder(report, 50)
         else:
             return NagaServiceOrder(report, 0)
 
     async def statistic(self, year: int, month: int) -> list[NagaServiceUserStatistic]:
-        sess = get_session()
-
         t_begin = datetime(year, month, 1)
         t_end = datetime(year, month, 1) + monthdelta(months=1)
-
-        stmt = select(NagaOrderOrm).where(
-            NagaOrderOrm.create_time >= t_begin,
-            NagaOrderOrm.create_time < t_end,
-            NagaOrderOrm.status == NagaOrderStatus.ok,
-        )
-
-        orders = (await sess.execute(stmt)).scalars()
+        orders = await get_orders(t_begin, t_end)
 
         statistic = {}
 
