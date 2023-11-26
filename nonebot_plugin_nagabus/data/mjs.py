@@ -1,6 +1,7 @@
 import json
 from typing import Any, Callable
 from collections.abc import Awaitable
+from typing_extensions import deprecated
 
 import aiofiles
 from nonebot import logger
@@ -12,6 +13,7 @@ from .base import SqlModel
 from .utils.atomic_cache import get_atomic_cache
 
 
+@deprecated
 class MajsoulPaipuOrm(SqlModel):
     __tablename__ = "nonebot_plugin_nagabus_majsoul_paipu"
     __table_args__ = {"extend_existing": True}
