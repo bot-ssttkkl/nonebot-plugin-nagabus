@@ -1,13 +1,13 @@
+import json
 from enum import IntEnum
 from typing import Optional
 from datetime import datetime, timezone
 
 from nonebot import logger
+from pydantic import BaseModel
 from nonebot_plugin_orm import AsyncSession
 from sqlalchemy import ForeignKey, select, update
 from sqlalchemy.orm import Mapped, relationship, mapped_column
-
-from nonebot_plugin_nagabus.data.utils.pydantic import PydanticModel
 
 from .base import SqlModel
 from .utils import UTCDateTime
@@ -29,7 +29,7 @@ class NagaOrderOrm(SqlModel):
     source: Mapped[NagaOrderSource]
     model_type: Mapped[str]
     status: Mapped[NagaOrderStatus]
-    naga_report: Mapped[Optional[NagaReport]] = mapped_column(PydanticModel(NagaReport))
+    naga_report: Mapped[Optional[str]]  # json of NagaReport
     create_time: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     update_time: Mapped[datetime] = mapped_column(UTCDateTime)
 
@@ -53,6 +53,10 @@ class MajsoulOrderOrm(SqlModel):
         passive_deletes=True,
         lazy="joined",
     )
+
+
+class NagaReportWrapper(BaseModel):
+    report: NagaReport
 
 
 class NagaRepository:
@@ -186,9 +190,14 @@ class NagaRepository:
             .where(NagaOrderOrm.haihu_id == haihu_id)
             .values(
                 status=NagaOrderStatus.ok,
-                naga_report=report,
+                naga_report=json.dumps(report),
                 update_time=datetime.now(timezone.utc),
             )
         )
         await self.sess.execute(stmt)
         await self.sess.commit()
+
+    @staticmethod
+    def parse_report(raw_report: str) -> NagaReport:
+        wrapper_dict = {"report": json.loads(raw_report)}
+        return NagaReportWrapper.parse_obj(wrapper_dict).report

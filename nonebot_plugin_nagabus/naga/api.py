@@ -81,7 +81,9 @@ class NagaApi:
             headers={"Referer": "https://naga.dmv.nico/naga_report/order_report_list/"},
             params={"year": year, "month": month},
         )
-        return OrderReportList.parse_obj(resp.json())
+        resp_json = resp.json()
+        assert resp_json["status"] == 200
+        return OrderReportList.parse_obj(resp_json)
 
     async def _get_csrfmiddlewaretoken(self) -> str:
         resp = await self.client.get("/order_form/")
