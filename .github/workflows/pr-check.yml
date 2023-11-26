@@ -1,0 +1,64 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: PR Check
+
+on:
+  pull_request:
+
+jobs:
+  test-api-only:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install requirements
+      run: |
+        pip install poetry
+        poetry export --with=dev --without-hashes -o requirements.txt
+        pip install -r requirements.txt
+    - name: Test with pytest
+      run: pytest
+
+#  test-full:
+#
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: [ macos-latest, windows-latest, ubuntu-latest ]
+#        python-version: ["3.9", "3.10", "3.11", "3.12"]
+#
+#    runs-on: ${{ matrix.os }}
+#    steps:
+#    - name: Checkout nonebot-plugin-access-control
+#      uses: actions/checkout@v3
+#      with:
+#        repository: 'bot-ssttkkl/nonebot-plugin-access-control'
+#    - name: Set up Python ${{ matrix.python-version }}
+#      uses: actions/setup-python@v3
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#    - name: Install requirements
+#      run: |
+#        pip install poetry
+#        poetry export --with=dev --without-hashes -o requirements.txt
+#        pip install -r requirements.txt
+#    - name: Checkout nonebot-plugin-access-control-api
+#      uses: actions/checkout@v3
+#      with:
+#        path: 'nonebot-plugin-access-control-api'
+#    - name: Install nonebot-plugin-access-control-api
+#      run: |
+#        pip install ./nonebot-plugin-access-control-api
+#    - name: Test with pytest
+#      run: pytest ./src/tests
