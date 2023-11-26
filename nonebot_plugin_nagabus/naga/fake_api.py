@@ -18,6 +18,7 @@ from nonebot_plugin_nagabus.naga.model import (
     NagaGameRule,
     NagaOrderStatus,
     NagaReportPlayer,
+    NagaTonpuuModelType,
     NagaHanchanModelType,
 )
 
@@ -36,7 +37,7 @@ class FakeNagaApi:
 
     async def set_cookies(self, cookies: Mapping[str, str]):
         logger.info(
-            f"naga_cookies set to {'; '.join((f'{kv[0]}={kv[1]}' for kv in cookies))}"
+            f"naga_cookies set to {'; '.join(f'{kv[0]}={kv[1]}' for kv in cookies)}"
         )
 
     async def order_report_list(self, year: int, month: int) -> OrderReportList:
@@ -51,7 +52,7 @@ class FakeNagaApi:
 
     @logger.catch
     async def _produce_report(self, report: NagaReport):
-        await asyncio.sleep(20)
+        await asyncio.sleep(5)
 
         self.report.insert(0, report)
         logger.debug(
@@ -64,7 +65,7 @@ class FakeNagaApi:
         seat: int,
         rule: NagaGameRule,
         model_type: Union[
-            Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ],
     ):
         time = (
@@ -99,7 +100,7 @@ class FakeNagaApi:
         seat: int,
         rule: NagaGameRule,
         model_type: Union[
-            Sequence[NagaHanchanModelType], Sequence[NagaHanchanModelType]
+            Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ],
     ) -> AnalyzeTenhou:
         for o in self.order:

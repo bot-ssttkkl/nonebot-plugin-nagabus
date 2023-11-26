@@ -20,6 +20,7 @@ from .fake_api import FakeNagaApi
 from .utils import model_type_to_str
 from ..data.mjs import get_majsoul_paipu
 from .api import NagaApi, OrderReportList
+from ..data.utils.session import _use_session
 from ..data.naga_cookies import get_naga_cookies, set_naga_cookies
 from .errors import (
     OrderError,
@@ -252,128 +253,132 @@ class NagaService:
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        try:
-            data = await get_majsoul_paipu(majsoul_uuid)
-        except MajsoulDownloadError as e:
-            logger.opt(colors=True).warning(
-                f"Failed to download paipu <y>{majsoul_uuid}</y>, code: {e.code}"
-            )
-            if e.code == 1203:
-                raise InvalidGameError(f"invalid majsoul_uuid: {majsoul_uuid}") from e
+        async with _use_session():
+            try:
+                data = await get_majsoul_paipu(majsoul_uuid)
+            except MajsoulDownloadError as e:
+                logger.opt(colors=True).warning(
+                    f"Failed to download paipu <y>{majsoul_uuid}</y>, code: {e.code}"
+                )
+                if e.code == 1203:
+                    raise InvalidGameError(
+                        f"invalid majsoul_uuid: {majsoul_uuid}"
+                    ) from e
+                else:
+                    raise e
+
+            if len(data["name"]) != 4:
+                raise UnsupportedGameError("only yonma game is supported")
+
+            if "東" in data["rule"]["disp"]:
+                rule = NagaGameRule.tonpuu
             else:
-                raise e
+                rule = NagaGameRule.hanchan
 
-        if len(data["name"]) != 4:
-            raise UnsupportedGameError("only yonma game is supported")
-
-        if "東" in data["rule"]["disp"]:
-            rule = NagaGameRule.tonpuu
-        else:
-            rule = NagaGameRule.hanchan
-
-        log = None
-        for i, log in enumerate(data["log"]):
-            if log[0][0] == kyoku:
-                if honba == -1:
-                    # 未指定本场
-                    if (i == 0 or data["log"][i - 1][0][0] != kyoku) and (
-                        i == len(data["log"]) - 1 or data["log"][i + 1][0][0] != kyoku
-                    ):
-                        # 该场次只存在一个本场
-                        honba = log[0][1]
+            log = None
+            for i, log in enumerate(data["log"]):
+                if log[0][0] == kyoku:
+                    if honba == -1:
+                        # 未指定本场
+                        if (i == 0 or data["log"][i - 1][0][0] != kyoku) and (
+                            i == len(data["log"]) - 1
+                            or data["log"][i + 1][0][0] != kyoku
+                        ):
+                            # 该场次只存在一个本场
+                            honba = log[0][1]
+                            log = log
+                        break
+                    elif log[0][1] == honba:
                         log = log
-                    break
-                elif log[0][1] == honba:
-                    log = log
-                    break
+                        break
 
-        if log is None:
-            available_kyoku_honba = [(log[0][0], log[0][1]) for log in data["log"]]
-            raise InvalidKyokuHonbaError(available_kyoku_honba)
+            if log is None:
+                available_kyoku_honba = [(log[0][0], log[0][1]) for log in data["log"]]
+                raise InvalidKyokuHonbaError(available_kyoku_honba)
 
-        model_type = self._handle_model_type(rule, model_type)
-        model_type_str = model_type_to_str(model_type)
+            model_type = self._handle_model_type(rule, model_type)
+            model_type_str = model_type_to_str(model_type)
 
-        haihu_id = ""
-        new_order = False
+            haihu_id = ""
+            new_order = False
 
-        # 加锁防止重复下单
-        local_order = await get_local_majsoul_order(
-            majsoul_uuid, kyoku, honba, model_type_str
-        )
-        if local_order is None:
-            async with self._majsoul_order_mutex:
-                local_order = await get_local_majsoul_order(
-                    majsoul_uuid, kyoku, honba, model_type_str
-                )
-                if local_order is None:
-                    # 不存在记录，安排解析
+            # 加锁防止重复下单
+            local_order = await get_local_majsoul_order(
+                majsoul_uuid, kyoku, honba, model_type_str
+            )
+            if local_order is None:
+                async with self._majsoul_order_mutex:
+                    local_order = await get_local_majsoul_order(
+                        majsoul_uuid, kyoku, honba, model_type_str
+                    )
+                    if local_order is None:
+                        # 不存在记录，安排解析
+                        logger.opt(colors=True).info(
+                            f"Ordering majsoul paipu <y>{majsoul_uuid} "
+                            f"(kyoku: {kyoku}, honba: {honba})</y> analyze..."
+                        )
+
+                        # data["log"] = log
+                        data = {
+                            "title": data["title"],
+                            "name": data["name"],
+                            "rule": data["rule"],
+                            "log": [log],
+                        }
+
+                        order = await self._order_custom([data], rule, model_type)
+                        haihu_id = order.haihu_id
+
+                        new_order = True
+
+                        session_persist_id = await get_session_persist_id(session)
+                        await new_local_majsoul_order(
+                            haihu_id,
+                            session_persist_id,
+                            majsoul_uuid,
+                            kyoku,
+                            honba,
+                            model_type_str,
+                        )
+
+            if local_order is not None:
+                # 存在记录
+                if local_order.status == NagaOrderStatus.ok:
                     logger.opt(colors=True).info(
-                        f"Ordering majsoul paipu <y>{majsoul_uuid} "
-                        f"(kyoku: {kyoku}, honba: {honba})</y> analyze..."
+                        f"Found a existing majsoul paipu <y>{majsoul_uuid} "
+                        f"(kyoku: {kyoku}, honba: {honba})</y> "
+                        f"analyze report: {local_order.haihu_id}"
                     )
+                    report = NagaReport(*json.loads(local_order.naga_report))
+                    return NagaServiceOrder(report, 0)
 
-                    # data["log"] = log
-                    data = {
-                        "title": data["title"],
-                        "name": data["name"],
-                        "rule": data["rule"],
-                        "log": [log],
-                    }
-
-                    order = await self._order_custom([data], rule, model_type)
-                    haihu_id = order.haihu_id
-
-                    new_order = True
-
-                    session_persist_id = await get_session_persist_id(session)
-                    await new_local_majsoul_order(
-                        haihu_id,
-                        session_persist_id,
-                        majsoul_uuid,
-                        kyoku,
-                        honba,
-                        model_type_str,
-                    )
-
-        if local_order is not None:
-            # 存在记录
-            if local_order.status == NagaOrderStatus.ok:
+                haihu_id = local_order.naga_haihu_id
                 logger.opt(colors=True).info(
-                    f"Found a existing majsoul paipu <y>{majsoul_uuid} "
+                    f"Found a processing majsoul paipu <y>{majsoul_uuid} "
                     f"(kyoku: {kyoku}, honba: {honba})</y> "
-                    f"analyze report: {local_order.haihu_id}"
+                    f"analyze order: {haihu_id}"
                 )
-                report = NagaReport(*json.loads(local_order.naga_report))
-                return NagaServiceOrder(report, 0)
 
-            haihu_id = local_order.naga_haihu_id
+            assert haihu_id != ""
+
             logger.opt(colors=True).info(
-                f"Found a processing majsoul paipu <y>{majsoul_uuid} "
+                f"Waiting for majsoul paipu <y>{majsoul_uuid} "
                 f"(kyoku: {kyoku}, honba: {honba})</y> "
-                f"analyze order: {haihu_id}"
+                f"analyze report: {haihu_id} ..."
             )
+            report = await self._get_report(haihu_id)
 
-        assert haihu_id != ""
-
-        logger.opt(colors=True).info(
-            f"Waiting for majsoul paipu <y>{majsoul_uuid} "
-            f"(kyoku: {kyoku}, honba: {honba})</y> "
-            f"analyze report: {haihu_id} ..."
-        )
-        report = await self._get_report(haihu_id)
-
-        if new_order:
-            # 需要更新之前创建的NagaOrderOrm
-            logger.opt(colors=True).debug(
-                f"Updating majsoul paipu <y>{majsoul_uuid} "
-                f"(kyoku: {kyoku}, honba: {honba})</y> "
-                f"analyze report: {haihu_id}..."
-            )
-            await update_local_majsoul_order(haihu_id, report)
-            return NagaServiceOrder(report, 10)
-        else:
-            return NagaServiceOrder(report, 0)
+            if new_order:
+                # 需要更新之前创建的NagaOrderOrm
+                logger.opt(colors=True).debug(
+                    f"Updating majsoul paipu <y>{majsoul_uuid} "
+                    f"(kyoku: {kyoku}, honba: {honba})</y> "
+                    f"analyze report: {haihu_id}..."
+                )
+                await update_local_majsoul_order(haihu_id, report)
+                return NagaServiceOrder(report, 10)
+            else:
+                return NagaServiceOrder(report, 0)
 
     async def _order_tenhou(
         self,
@@ -399,94 +404,99 @@ class NagaService:
             None, Sequence[NagaHanchanModelType], Sequence[NagaTonpuuModelType]
         ] = None,
     ) -> NagaServiceOrder:
-        if not self._tenhou_haihu_id_reg.match(haihu_id):
-            raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
+        async with _use_session():
+            if not self._tenhou_haihu_id_reg.match(haihu_id):
+                raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
 
-        haihu_element = haihu_id.split("-")
-        if len(haihu_element) != 4:
-            raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
+            haihu_element = haihu_id.split("-")
+            if len(haihu_element) != 4:
+                raise InvalidGameError(f"invalid haihu_id: {haihu_id}")
 
-        haihu_rule = int(haihu_element[1], 16)
-        is_yonma = not bool(haihu_rule & 16)
-        is_hanchan = bool(haihu_rule & 8)
-        is_kuitan = not bool(haihu_rule & 4)
-        is_online = bool(haihu_rule & 1)
+            haihu_rule = int(haihu_element[1], 16)
+            is_yonma = not bool(haihu_rule & 16)
+            is_hanchan = bool(haihu_rule & 8)
+            is_kuitan = not bool(haihu_rule & 4)
+            is_online = bool(haihu_rule & 1)
 
-        if is_yonma and is_kuitan and is_online:
-            rule = NagaGameRule.hanchan if is_hanchan else NagaGameRule.tonpuu
-        else:
-            raise UnsupportedGameError("only online kuitan yonma game is supported")
+            if is_yonma and is_kuitan and is_online:
+                rule = NagaGameRule.hanchan if is_hanchan else NagaGameRule.tonpuu
+            else:
+                raise UnsupportedGameError("only online kuitan yonma game is supported")
 
-        model_type = self._handle_model_type(rule, model_type)
-        model_type_str = model_type_to_str(model_type)
+            model_type = self._handle_model_type(rule, model_type)
+            model_type_str = model_type_to_str(model_type)
 
-        new_order = False
+            new_order = False
 
-        # 加锁防止重复下单
-        local_order = await get_local_order(haihu_id, model_type_str)
-        if local_order is None:
-            async with self._tenhou_order_mutex:
-                local_order = await get_local_order(haihu_id, model_type_str)
-                if local_order is None:
-                    # 不存在记录，安排解析
+            # 加锁防止重复下单
+            local_order = await get_local_order(haihu_id, model_type_str)
+            if local_order is None:
+                async with self._tenhou_order_mutex:
+                    local_order = await get_local_order(haihu_id, model_type_str)
+                    if local_order is None:
+                        # 不存在记录，安排解析
+                        logger.opt(colors=True).info(
+                            f"Ordering tenhou paipu <y>{haihu_id}</y> analyze..."
+                        )
+
+                        await self._order_tenhou(haihu_id, seat, rule, model_type)
+
+                        new_order = True
+
+                        session_persist_id = await get_session_persist_id(session)
+                        await new_local_order(
+                            haihu_id, session_persist_id, rule, model_type_str
+                        )
+
+            if local_order is not None:
+                # 存在记录
+                if local_order.status == NagaOrderStatus.ok:
                     logger.opt(colors=True).info(
-                        f"Ordering tenhou paipu <y>{haihu_id}</y> analyze..."
+                        f"Found a existing tenhou paipu <y>{haihu_id})</y> "
+                        "analyze report"
                     )
+                    report = NagaReport(*json.loads(local_order.naga_report))
+                    return NagaServiceOrder(report, 0)
 
-                    await self._order_tenhou(haihu_id, seat, rule, model_type)
-
-                    new_order = True
-
-                    session_persist_id = await get_session_persist_id(session)
-                    await new_local_order(
-                        haihu_id, session_persist_id, rule, model_type_str
-                    )
-
-        if local_order is not None:
-            # 存在记录
-            if local_order.status == NagaOrderStatus.ok:
                 logger.opt(colors=True).info(
-                    f"Found a existing tenhou paipu <y>{haihu_id})</y> "
-                    "analyze report"
+                    f"Found a processing tenhou paipu <y>{haihu_id})</y> "
+                    "analyze order"
                 )
-                report = NagaReport(*json.loads(local_order.naga_report))
-                return NagaServiceOrder(report, 0)
 
             logger.opt(colors=True).info(
-                f"Found a processing tenhou paipu <y>{haihu_id})</y> " "analyze order"
+                f"Waiting for tenhou paipu <y>{haihu_id})</y> " f"analyze report..."
             )
+            report = await self._get_report(haihu_id)
 
-        logger.opt(colors=True).info(
-            f"Waiting for tenhou paipu <y>{haihu_id})</y> " f"analyze report..."
-        )
-        report = await self._get_report(haihu_id)
+            if new_order:
+                # 需要更新之前创建的NagaOrderOrm
+                logger.opt(colors=True).debug(
+                    f"Updating tenhou paipu <y>{haihu_id})</y> " "analyze report..."
+                )
+                await update_local_order(haihu_id, report)
 
-        if new_order:
-            # 需要更新之前创建的NagaOrderOrm
-            logger.opt(colors=True).debug(
-                f"Updating tenhou paipu <y>{haihu_id})</y> " "analyze report..."
-            )
-            await update_local_order(haihu_id, report)
-
-            return NagaServiceOrder(report, 50)
-        else:
-            return NagaServiceOrder(report, 0)
+                return NagaServiceOrder(report, 50)
+            else:
+                return NagaServiceOrder(report, 0)
 
     async def statistic(self, year: int, month: int) -> list[NagaServiceUserStatistic]:
-        t_begin = datetime(year, month, 1)
-        t_end = datetime(year, month, 1) + monthdelta(months=1)
-        orders = await get_orders(t_begin, t_end)
+        async with _use_session():
+            t_begin = datetime(year, month, 1)
+            t_end = datetime(year, month, 1) + monthdelta(months=1)
+            orders = await get_orders(t_begin, t_end)
 
-        statistic = {}
+            statistic = {}
 
-        for order in orders:
-            if order.customer_id not in statistic:
-                statistic[order.customer_id] = 0
-            statistic[order.customer_id] += order.cost_np
+            for order in orders:
+                if order.customer_id not in statistic:
+                    statistic[order.customer_id] = 0
+                statistic[order.customer_id] += order.cost_np
 
-        statistic = [NagaServiceUserStatistic(x[0], x[1]) for x in statistic.items()]
-        statistic.sort(key=lambda x: x.cost_np, reverse=True)
-        return statistic
+            statistic = [
+                NagaServiceUserStatistic(x[0], x[1]) for x in statistic.items()
+            ]
+            statistic.sort(key=lambda x: x.cost_np, reverse=True)
+            return statistic
 
     async def get_rest_np(self) -> int:
         return await self.api.get_rest_np()
