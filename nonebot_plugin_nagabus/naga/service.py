@@ -342,7 +342,7 @@ class NagaService:
                         f"(kyoku: {kyoku}, honba: {honba})</y> "
                         f"analyze report: {local_order.haihu_id}"
                     )
-                    report = local_order.naga_report
+                    report = repo.parse_report(local_order.naga_report)
                     return NagaServiceOrder(report=report, cost_np=0)
 
                 haihu_id = local_order.haihu_id
@@ -448,7 +448,7 @@ class NagaService:
                         f"Found a existing tenhou paipu <y>{haihu_id})</y> "
                         "analyze report"
                     )
-                    report = local_order.naga_report
+                    report = repo.parse_report(local_order.naga_report)
                     return NagaServiceOrder(report=report, cost_np=0)
 
                 logger.opt(colors=True).info(

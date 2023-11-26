@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-nagabus"
-version = "0.3.0"
+version = "0.3.1"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 readme = "README.md"
