@@ -1695,14 +1695,14 @@ pydantic = ">=1.9.0,<2.0.0"
 
 [[package]]
 name = "nonebot-plugin-access-control-api"
-version = "1.1.1"
+version = "1.1.2"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nonebot_plugin_access_control_api-1.1.1-py3-none-any.whl", hash = "sha256:cb924b400d651306406fb34c56cf017bd5dc5185a687f2fc8b2ee02c58e9d204"},
-    {file = "nonebot_plugin_access_control_api-1.1.1.tar.gz", hash = "sha256:24b90f526d90a00543145a4e5bd54f80361ca9af5d6f07ec9545a7e36c8ae7a3"},
+    {file = "nonebot_plugin_access_control_api-1.1.2-py3-none-any.whl", hash = "sha256:3d6fb690968ff255508e2d1d5e30a1cf94972cef2611247519835be79a842b4c"},
+    {file = "nonebot_plugin_access_control_api-1.1.2.tar.gz", hash = "sha256:45ebddef96e6c377259b0a7f2bc6708f06398f722f8986783eaa5793d69a25fa"},
 ]
 
 [package.dependencies]
@@ -3126,4 +3126,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "213f830b77b9846d0489323f0ad9eb46c3dd7cd82bb6e0fb43bcbf313b73ba31"
+content-hash = "b8a71186dbc8a617bfe1ad009ac8ad0c9b2ea6616f718568e42886ed384ca55b"
