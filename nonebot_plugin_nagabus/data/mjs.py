@@ -13,7 +13,7 @@ from .base import SqlModel
 from .utils.atomic_cache import get_atomic_cache
 
 
-@deprecated
+@deprecated("")
 class MajsoulPaipuOrm(SqlModel):
     __tablename__ = "nonebot_plugin_nagabus_majsoul_paipu"
     __table_args__ = {"extend_existing": True}
