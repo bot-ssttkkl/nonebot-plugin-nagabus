@@ -45,7 +45,9 @@ async def analyze_majsoul(session: Session, uuid: str, kyoku: int, honba: int):
 
         if cost_np == 0:
             await _retire_token()
-            await MessageFactory("由于此前已解析过该局，本次解析消耗0NP").send(reply=True)
+            await MessageFactory("由于此前已解析过该局，本次解析消耗0NP").send(
+                reply=True
+            )
         else:
             await MessageFactory(f"本次解析消耗{cost_np}NP").send(reply=True)
     except InvalidKyokuHonbaError as e:
@@ -58,7 +60,9 @@ async def analyze_majsoul(session: Session, uuid: str, kyoku: int, honba: int):
             else:
                 kyoku_honba.append(f"西{kyoku - 7}局{honba}本场")
 
-        raise BadRequestError(f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）") from e
+        raise BadRequestError(
+            f"请输入正确的场次与本场（{'、'.join(kyoku_honba)}）"
+        ) from e
 
 
 async def analyze_tenhou(session: Session, haihu_id: str, seat: int):

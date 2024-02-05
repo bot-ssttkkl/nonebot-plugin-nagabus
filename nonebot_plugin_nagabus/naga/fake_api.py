@@ -29,11 +29,9 @@ class FakeNagaApi:
         self.order = []
         self.rest_np = 1500
 
-    async def start(self):
-        ...
+    async def start(self): ...
 
-    async def close(self):
-        ...
+    async def close(self): ...
 
     async def set_cookies(self, cookies: Mapping[str, str]):
         logger.info(
