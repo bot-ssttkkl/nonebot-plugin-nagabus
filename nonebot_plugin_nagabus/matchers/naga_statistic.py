@@ -61,7 +61,9 @@ async def naga_statistic_this_month(bot: Bot):
     await naga_statistic(bot, cur.year, cur.month, statistic, rest_np)
 
 
-naga_statistic_prev_month_matcher = on_command("naga上月使用情况", priority=5, block=True)
+naga_statistic_prev_month_matcher = on_command(
+    "naga上月使用情况", priority=5, block=True
+)
 statistic_srv.patch_matcher(naga_statistic_prev_month_matcher)
 
 
